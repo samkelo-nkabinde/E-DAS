@@ -22,17 +22,19 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include <stdio.h>
+
+#include "led.h"
+#include "button.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TURN_ON GPIO_PIN_SET
-#define TURN_OFF GPIO_PIN_RESET
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -77,7 +79,16 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  LED_t D2 = {GPIOC, LED_D2_Pin, 1, 1, 0};
+  LED_t D3 = {GPIOA, LED_D3_Pin, 1, 1, 0};
+  LED_t D4 = {GPIOA, LED_D4_Pin, 1, 1, 0};
+  LED_t D5 = {GPIOA, LED_D5_Pin, 1, 1, 0};
 
+  Button_t S1 = {GPIOC, GPIO_PIN_1, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+  Button_t S2 = {GPIOC, GPIO_PIN_2, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+  Button_t S3 = {GPIOC, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+  Button_t S4 = {GPIOB, GPIO_PIN_6, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+  Button_t S5 = {GPIOB, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -91,12 +102,16 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  const char *student_number = "28118944\r\n";
+
+  const char *student_number = "*28118944#\n";
+
+  uint32_t start = HAL_GetTick();
+  while (HAL_GetTick() - start < 150);
+
   HAL_UART_Transmit(&huart2, (uint8_t*)student_number, strlen(student_number), HAL_MAX_DELAY );
-//  HAL_GPIO_WritePin(GPIOC, LED_D2_Pin, TURN_ON);
-//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-//  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
+
+  LED_on(&D2);
+  LED_on(&D4);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -104,10 +119,45 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	    HAL_GPIO_WritePin(GPIOC, LED_D2_Pin, TURN_ON);
-	    HAL_Delay(1000);
-	    HAL_GPIO_WritePin(GPIOC, LED_D2_Pin, TURN_OFF);
-	    //HAL_Delay(1000);
+	  LED_blink_control(&D3);
+	  LED_blink_control(&D5);
+
+
+	  if (button_pressed(&S1))
+		  LED_toggle(&D2);
+
+	  if (button_pressed(&S2))
+	  {
+	      D3.blink_enable = !D3.blink_enable;
+
+	      if (!D3.blink_enable)
+	          LED_off(&D3);
+	      else
+	          D3.blink_timer = HAL_GetTick();
+	  }
+
+
+	  if (button_pressed(&S4))
+		  LED_toggle(&D4);
+
+	  if (button_pressed(&S5))
+	  {
+		  D5.blink_enable = !D5.blink_enable;
+
+		  if (!D5.blink_enable)
+			  LED_off(&D5);
+		  else
+			  D5.blink_timer = HAL_GetTick();
+	  }
+
+	  if (button_pressed(&S3))
+	  {
+		  int temp = 25;
+		  char msg[50];
+		  sprintf(msg, "Temperature: %d C\r\n", temp);
+		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+	  }
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -175,10 +225,10 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.BaudRate = 57600;
+  huart2.Init.WordLength = UART_WORDLENGTH_9B;
   huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Parity = UART_PARITY_EVEN;
   huart2.Init.Mode = UART_MODE_TX_RX;
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
