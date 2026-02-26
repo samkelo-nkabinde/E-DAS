@@ -53,13 +53,15 @@ UART_HandleTypeDef huart2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+volatile uint32_t pulse_count = 0;
+uint32_t last_sample_time = 0;
 /* USER CODE END 0 */
 
 /**
@@ -121,45 +123,62 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  LED_blink_control(&D3);
-	  LED_blink_control(&D5);
+	  uint32_t now = HAL_GetTick();
 
-
-	  if (button_pressed(&S1))
-		  LED_toggle(&D2);
-
-	  if (button_pressed(&S2))
+	  // Every 100 ms
+	  if (now - last_sample_time >= 100)
 	  {
-	      D3.blink_enable = !D3.blink_enable;
+		  last_sample_time = now;
 
-	      if (!D3.blink_enable)
-	          LED_off(&D3);
-	      else
-	          D3.blink_timer = HAL_GetTick();
+		  uint32_t pulses = pulse_count;
+		  pulse_count = 0;
+
+		  int temp = (int)(((float)pulses / 4096.0f * 256.0f) - 50.0f);
+
+		  char buffer[50];
+		  sprintf(buffer, "Temp: %d C\r\n", temp);
+
+		  HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), 10);
 	  }
 
+		  LED_blink_control(&D3);
+		  LED_blink_control(&D5);
 
-	  if (button_pressed(&S4))
-		  LED_toggle(&D4);
 
-	  if (button_pressed(&S5))
-	  {
-		  D5.blink_enable = !D5.blink_enable;
+		  if (button_pressed(&S1))
+			  LED_toggle(&D2);
 
-		  if (!D5.blink_enable)
-			  LED_off(&D5);
-		  else
-			  D5.blink_timer = HAL_GetTick();
-	  }
+		  if (button_pressed(&S2))
+		  {
+		      D3.blink_enable = !D3.blink_enable;
 
-	  if (button_pressed(&S3))
-	  {
-		  int temp = 25;
-		  char msg[50];
-		  sprintf(msg, "Temperature: %d C\r\n", temp);
-		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-	  }
+		      if (!D3.blink_enable)
+		          LED_off(&D3);
+		      else
+		          D3.blink_timer = HAL_GetTick();
+		  }
 
+
+		  if (button_pressed(&S4))
+			  LED_toggle(&D4);
+
+		  if (button_pressed(&S5))
+		  {
+			  D5.blink_enable = !D5.blink_enable;
+
+			  if (!D5.blink_enable)
+				  LED_off(&D5);
+			  else
+				  D5.blink_timer = HAL_GetTick();
+		  }
+
+		  if (button_pressed(&S3))
+		  {
+			  int temp = 25;
+			  char msg[50];
+			  sprintf(msg, "Temperature: %d C\r\n", temp);
+			  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+		  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -300,13 +319,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_D2_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == GPIO_PIN_7)
+    {
+        pulse_count++;
+    }
+}
 /* USER CODE END 4 */
 
 /**
