@@ -79,6 +79,8 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  uint32_t start = HAL_GetTick();
+
   LED_t D2 = {GPIOC, LED_D2_Pin, 1, 1, 0};
   LED_t D3 = {GPIOA, LED_D3_Pin, 1, 1, 0};
   LED_t D4 = {GPIOA, LED_D4_Pin, 1, 1, 0};
@@ -103,15 +105,15 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  const char *student_number = "*28118944#\n";
-
-  uint32_t start = HAL_GetTick();
-  while (HAL_GetTick() - start < 150);
-
-  HAL_UART_Transmit(&huart2, (uint8_t*)student_number, strlen(student_number), HAL_MAX_DELAY );
-
   LED_on(&D2);
   LED_on(&D4);
+  LED_on(&D3);
+  LED_on(&D5);
+
+  const char *student_number = "*28118944#\n";
+  while (HAL_GetTick() - start < 250);
+  HAL_UART_Transmit(&huart2, (uint8_t*)student_number, strlen(student_number), 1000 );
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
