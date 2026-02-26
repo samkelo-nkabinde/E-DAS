@@ -23,9 +23,11 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "led.h"
 #include "button.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,7 +36,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define WINDOW 5
 
+volatile uint32_t pulse_count = 0;
+volatile uint32_t last_pulse_tick = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -54,14 +59,14 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
+void EXTI9_5_IRQHandler(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-volatile uint32_t pulse_count = 0;
-uint32_t last_sample_time = 0;
+
 /* USER CODE END 0 */
 
 /**
@@ -93,6 +98,10 @@ int main(void)
   Button_t S3 = {GPIOC, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
   Button_t S4 = {GPIOB, GPIO_PIN_6, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
   Button_t S5 = {GPIOB, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+
+  int32_t temperature_data[WINDOW] = {0};
+  int index = 0;
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -123,62 +132,74 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  uint32_t now = HAL_GetTick();
+	  LED_blink_control(&D3);
+	  LED_blink_control(&D5);
 
-	  // Every 100 ms
-	  if (now - last_sample_time >= 100)
+
+	  if (button_pressed(&S1))
+		  LED_toggle(&D2);
+
+	  if (button_pressed(&S2))
 	  {
-		  last_sample_time = now;
+		  D3.blink_enable = !D3.blink_enable;
 
-		  uint32_t pulses = pulse_count;
-		  pulse_count = 0;
-
-		  int temp = (int)(((float)pulses / 4096.0f * 256.0f) - 50.0f);
-
-		  char buffer[50];
-		  sprintf(buffer, "Temp: %d C\r\n", temp);
-
-		  HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), 10);
+		  if (!D3.blink_enable)
+			  LED_off(&D3);
+		  else
+			  D3.blink_timer = HAL_GetTick();
 	  }
 
-		  LED_blink_control(&D3);
-		  LED_blink_control(&D5);
 
+	  if (button_pressed(&S4))
+		  LED_toggle(&D4);
 
-		  if (button_pressed(&S1))
-			  LED_toggle(&D2);
+	  if (button_pressed(&S5))
+	  {
+		  D5.blink_enable = !D5.blink_enable;
 
-		  if (button_pressed(&S2))
+		  if (!D5.blink_enable)
+			  LED_off(&D5);
+		  else
+			  D5.blink_timer = HAL_GetTick();
+	  }
+
+	  uint32_t now = HAL_GetTick();
+
+	  if (pulse_count > 0 && (now - last_pulse_tick > 80))
+	  {
+		  __disable_irq();
+		  uint32_t final_pulses = pulse_count;
+		  pulse_count = 0;
+		  __enable_irq();
+
+		  if (final_pulses > 1000)
 		  {
-		      D3.blink_enable = !D3.blink_enable;
 
-		      if (!D3.blink_enable)
-		          LED_off(&D3);
-		      else
-		          D3.blink_timer = HAL_GetTick();
+			  int32_t current_temp = ((int32_t)final_pulses * 2560 / 4096) - 500;
+
+			  temperature_data[index] = current_temp;
+			  index = (index + 1) % WINDOW;
+
+			  int32_t sum = 0;
+			  int count = 0;
+			  for(int i = 0; i < WINDOW; i++) {
+				  if(temperature_data[i] != 0) {
+					  sum += temperature_data[i];
+					  count++;
+				  }
+			  }
+			  int32_t avg_temp = sum / count;
+
+			  char buffer[64];
+			  if (button_pressed(&S3))
+			  {
+				  sprintf(buffer, "@%d.%d&\n",
+				  					  avg_temp / 10, (int)abs(avg_temp % 10), final_pulses);
+				  HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), 100);
+			  }
 		  }
+	  }
 
-
-		  if (button_pressed(&S4))
-			  LED_toggle(&D4);
-
-		  if (button_pressed(&S5))
-		  {
-			  D5.blink_enable = !D5.blink_enable;
-
-			  if (!D5.blink_enable)
-				  LED_off(&D5);
-			  else
-				  D5.blink_timer = HAL_GetTick();
-		  }
-
-		  if (button_pressed(&S3))
-		  {
-			  int temp = 25;
-			  char msg[50];
-			  sprintf(msg, "Temperature: %d C\r\n", temp);
-			  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-		  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -324,7 +345,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
@@ -336,7 +358,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (GPIO_Pin == GPIO_PIN_7)
     {
         pulse_count++;
+        last_pulse_tick = HAL_GetTick();
     }
+}
+
+void EXTI9_5_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
 }
 /* USER CODE END 4 */
 
