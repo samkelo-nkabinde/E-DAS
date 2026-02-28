@@ -1,2 +1,3 @@
 # Embedded Driver Assistance System (E-DAS)
-### Design-E 314, 2026 Project 
+## Background
+This project forms part of my 3rd year engineering module, **Design E 314**.
