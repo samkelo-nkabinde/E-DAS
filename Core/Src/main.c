@@ -27,19 +27,17 @@
 
 #include "led.h"
 #include "button.h"
+#include "temperature.h"
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+UART_HandleTypeDef huart2;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define WINDOW 5
-
-volatile uint32_t pulse_count = 0;
-volatile uint32_t last_pulse_tick = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -48,7 +46,6 @@ volatile uint32_t last_pulse_tick = 0;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
@@ -98,9 +95,6 @@ int main(void)
   Button_t S3 = {GPIOC, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
   Button_t S4 = {GPIOB, GPIO_PIN_6, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
   Button_t S5 = {GPIOB, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-
-  int32_t temperature_data[WINDOW] = {0};
-  int index = 0;
 
   /* USER CODE END Init */
 
@@ -163,42 +157,12 @@ int main(void)
 			  D5.blink_timer = HAL_GetTick();
 	  }
 
-	  uint32_t now = HAL_GetTick();
+	  uint32_t final_pulse_count = get_final_pulse_count(HAL_GetTick());
 
-	  if (pulse_count > 0 && (now - last_pulse_tick > 80))
-	  {
-		  __disable_irq();
-		  uint32_t final_pulses = pulse_count;
-		  pulse_count = 0;
-		  __enable_irq();
+	  compute_average_temperature(final_pulse_count);
 
-		  if (final_pulses > 1000)
-		  {
-
-			  int32_t current_temp = ((int32_t)final_pulses * 2560 / 4096) - 500;
-
-			  temperature_data[index] = current_temp;
-			  index = (index + 1) % WINDOW;
-
-			  int32_t sum = 0;
-			  int count = 0;
-			  for(int i = 0; i < WINDOW; i++) {
-				  if(temperature_data[i] != 0) {
-					  sum += temperature_data[i];
-					  count++;
-				  }
-			  }
-			  int32_t avg_temp = sum / count;
-
-			  char buffer[64];
-			  if (button_pressed(&S3))
-			  {
-				  sprintf(buffer, "@%d.%d&\n",
-				  					  avg_temp / 10, (int)abs(avg_temp % 10), final_pulses);
-				  HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), 100);
-			  }
-		  }
-	  }
+	  if (button_pressed(&S3))
+		  transimit_temperature();
 
     /* USER CODE BEGIN 3 */
   }
