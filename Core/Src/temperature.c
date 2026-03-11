@@ -22,8 +22,10 @@ uint32_t get_final_pulse_count(uint32_t current_time)
 		return final_pulse_count;
 
 	 __disable_irq();
-	 final_pulse_count = pulse_count;
-	 pulse_count = 0;
+	 {
+		 final_pulse_count = pulse_count;
+		 pulse_count = 0;
+	 }
 	 __enable_irq();
 
 	 return final_pulse_count;
@@ -40,7 +42,7 @@ void compute_average_temperature(uint32_t final_pulse_count)
 	  temperature_data_index = (temperature_data_index + 1) % TEMPERATURE_DATA_WINDOW;
 
 	  int32_t sum = 0;
-	  int count = 0;
+	  uint8_t count = 0;
 
 	  for(int i = 0; i < TEMPERATURE_DATA_WINDOW; i++)
 	  {

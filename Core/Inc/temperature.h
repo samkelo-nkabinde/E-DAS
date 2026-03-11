@@ -8,20 +8,19 @@
 #ifndef INC_TEMPERATURE_H_
 #define INC_TEMPERATURE_H_
 
-#include "stm32f4xx_hal.h"
 #include "main.h"
 
+
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
 
-
+#define TEMPERATURE_DATA_WINDOW 5
 
 extern volatile uint32_t pulse_count;
 extern volatile uint32_t last_pulse_tick;
-
-#define TEMPERATURE_DATA_WINDOW 5
 
 extern int32_t temperature_data[TEMPERATURE_DATA_WINDOW];
 extern uint8_t temperature_data_index;
