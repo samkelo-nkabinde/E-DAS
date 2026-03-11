@@ -1,2 +1,1 @@
-# Exclude everything except directory Debug/ 
-/Debug/*
+# Include everythin now
