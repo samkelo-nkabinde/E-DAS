@@ -1,0 +1,2 @@
+../Core/Src/distance.c:14:10:get_pulse_width	6
+../Core/Src/distance.c:38:6:compute_average_distance	3
