@@ -29,7 +29,7 @@
 #include "button.h"
 #include "temperature.h"
 #include "distance.h"
-
+#include "stats.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,34 +66,7 @@ static void MX_TIM1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#define TRIG_PIN GPIO_PIN_7
-#define TRIG_PORT GPIOA
-#define ECHO_PIN GPIO_PIN_6
-#define ECHO_PORT GPIOA
 
-void send_uart(char *msg)
-{
-    HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
-}
-
-uint32_t measure_echo()
-{
-    uint32_t start, end;
-
-    HAL_GPIO_WritePin(TRIG_PORT,TRIG_PIN,GPIO_PIN_SET);
-    HAL_Delay(1);
-    HAL_GPIO_WritePin(TRIG_PORT,TRIG_PIN,GPIO_PIN_RESET);
-
-    while(HAL_GPIO_ReadPin(ECHO_PORT,ECHO_PIN)==GPIO_PIN_RESET);
-
-    start = HAL_GetTick();
-
-    while(HAL_GPIO_ReadPin(ECHO_PORT,ECHO_PIN)==GPIO_PIN_SET);
-
-    end = HAL_GetTick();
-
-    return end - start;
-}
 /* USER CODE END 0 */
 
 /**
@@ -126,6 +99,7 @@ int main(void)
   Button_t S4 = {GPIOB, GPIO_PIN_6, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
   Button_t S5 = {GPIOB, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
 
+  stats_init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -150,19 +124,38 @@ int main(void)
   while (HAL_GetTick() - start < 250);
   HAL_UART_Transmit(&huart2, (uint8_t*)student_number, strlen(student_number), 1000 );
 
+  compute_average_temperature(get_final_pulse_count(HAL_GetTick()));
+
+  transimit_stat(DATE);
+  transimit_stat(DISTANCE);
+
+  transimit_stat(TEMPERATURE);
+
+  transimit_stat(LIGHT);
+
+  transimit_stat(X_ACCELARATION);
+
+  transimit_stat(Y_ACCELARATION);
+
+  transimit_stat(Z_ACCELARATION);
+
+  transimit_stat(UNSAFE_DRIVING);
+
+  transimit_stat(IMPACT_DETECTED);
+
+  transimit_stat(LOW_LIGHT_WARNING);
+  transimit_stat(PROXIMITY_WARNING);
+  transimit_stat(HIGH_TEMPERATURE);
+  transimit_stat(GPS_LATITUDE);
+  transimit_stat(GPS_LONGITUDE);
+
   /* USER CODE END 2 */
-  char msg[50];
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-	  uint32_t t = measure_echo();
-
-	  sprintf(msg,"Echo time: %lu ms\r\n",t);
-	  send_uart(msg);
-
-	  HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

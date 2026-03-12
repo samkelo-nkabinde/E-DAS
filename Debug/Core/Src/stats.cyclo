@@ -1,0 +1,3 @@
+../Core/Src/stats.c:12:6:stats_init	1
+../Core/Src/stats.c:32:6:update_stat	7
+../Core/Src/stats.c:61:6:transimit_stat	1
