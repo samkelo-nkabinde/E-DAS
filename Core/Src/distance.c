@@ -11,6 +11,7 @@ uint32_t distance_data[DISTANCE_DATA_WINDOW] = {0};
 uint8_t distance_data_index = 0;
 uint32_t average_distance = UINT_MAX;
 
+
 uint32_t get_pulse_width()
 {
 	uint32_t pulse_width_start = 0;
@@ -35,9 +36,12 @@ uint32_t get_pulse_width()
 
 }
 
-void compute_average_distance()
+void compute_average_distance(uint32_t pulse_width)
 {
-	uint32_t current_distance = get_pulse_width() / 58;
+	uint32_t current_distance = pulse_width / 58;
+
+	if(current_distance > 400)
+	    return;
 
 	distance_data[distance_data_index] = current_distance;
 	distance_data_index = (distance_data_index + 1) % DISTANCE_DATA_WINDOW;
@@ -54,8 +58,14 @@ void compute_average_distance()
 		}
 	}
 
-	average_distance = sum / count;
+	if(count > 0)
+		average_distance = sum / count;
 
+	return;
 }
 
+bool proximity_warning(void)
+{
+	return average_distance <= 10;
+}
 

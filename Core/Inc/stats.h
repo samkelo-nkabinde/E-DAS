@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "temperature.h"
 #include "distance.h"
 
@@ -17,6 +18,8 @@
 #define SIZE 22
 #define NUMBER_OF_STATS 14
 
+extern bool alarm_checking;
+extern volatile uint8_t stats_requested;
 typedef enum
 {
 	DATE = 0,
@@ -41,5 +44,5 @@ extern char stat_data[NUMBER_OF_STATS][SIZE];
 void stats_init(void);
 void update_stat(Stat_type_e stat);
 void transimit_stat(Stat_type_e stat);
-
+void transimit_all_stats(void);
 #endif /* INC_STATS_H_ */

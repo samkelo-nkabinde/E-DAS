@@ -34,8 +34,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-UART_HandleTypeDef huart2;
-TIM_HandleTypeDef htim1;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -48,8 +47,13 @@ TIM_HandleTypeDef htim1;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
+TIM_HandleTypeDef htim1;
 UART_HandleTypeDef huart2;
+#define RX_BUFFER_SIZE 7
+uint8_t rx_buffer[RX_BUFFER_SIZE];
+uint8_t rx_data;
+uint8_t main_buffer[20];
+uint8_t buffer_index = 0;
 
 /* USER CODE BEGIN PV */
 
@@ -60,6 +64,11 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
+void USART2_IRQHandler(void);
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
+void EXTI9_5_IRQHandler(void);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -100,6 +109,7 @@ int main(void)
   Button_t S5 = {GPIOB, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
 
   stats_init();
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -113,51 +123,99 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
+
+  HAL_TIM_Base_Start(&htim1);
   /* USER CODE BEGIN 2 */
 
+
   LED_on(&D2);
-  LED_on(&D4);
   LED_on(&D3);
+  LED_on(&D4);
   LED_on(&D5);
 
   const char *student_number = "*28118944#\n";
   while (HAL_GetTick() - start < 250);
   HAL_UART_Transmit(&huart2, (uint8_t*)student_number, strlen(student_number), 1000 );
 
-  compute_average_temperature(get_final_pulse_count(HAL_GetTick()));
 
-  transimit_stat(DATE);
-  transimit_stat(DISTANCE);
-
-  transimit_stat(TEMPERATURE);
-
-  transimit_stat(LIGHT);
-
-  transimit_stat(X_ACCELARATION);
-
-  transimit_stat(Y_ACCELARATION);
-
-  transimit_stat(Z_ACCELARATION);
-
-  transimit_stat(UNSAFE_DRIVING);
-
-  transimit_stat(IMPACT_DETECTED);
-
-  transimit_stat(LOW_LIGHT_WARNING);
-  transimit_stat(PROXIMITY_WARNING);
-  transimit_stat(HIGH_TEMPERATURE);
-  transimit_stat(GPS_LATITUDE);
-  transimit_stat(GPS_LONGITUDE);
+  HAL_UART_Receive_IT(&huart2, &rx_data, 1);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
-    /* USER CODE END WHILE */
-    /* USER CODE BEGIN 3 */
-  }
+    {
+
+  	  static uint32_t last_ultra_time = 0;
+
+  	  if(HAL_GetTick() - last_ultra_time > 60)
+  	  {
+  	      uint32_t pulse = get_pulse_width();
+  	      compute_average_distance(pulse);
+  	      last_ultra_time = HAL_GetTick();
+  	  }
+
+  	  compute_average_temperature( get_final_pulse_count(HAL_GetTick()));
+
+  	  if(stats_requested)
+  	  {
+  		   update_stat(DISTANCE);
+  		   update_stat(TEMPERATURE);
+  		   update_stat(HIGH_TEMPERATURE);
+  		   update_stat(PROXIMITY_WARNING);
+
+  	       transimit_all_stats();
+  	       stats_requested = 0;
+  	  }
+
+        /* Enable emergency mode */
+        if(button_pressed(&S3) && alarm_checking == false)
+        {
+            LED_off(&D2);
+            LED_off(&D3);
+            LED_off(&D4);
+            LED_off(&D5);
+            alarm_checking = true;
+        }
+
+        /* Emergency mode */
+        if(alarm_checking)
+        {
+            if(proximity_warning())
+                LED_blink_control(&D2);
+            else
+                LED_off(&D2);
+
+            if(temperature_is_high())
+                LED_blink_control(&D5);
+            else
+                LED_off(&D5);
+
+            /* Disable emergency mode */
+            if(button_pressed(&S1) || button_pressed(&S2) ||
+               button_pressed(&S4) || button_pressed(&S5))
+            {
+                alarm_checking = false;
+            }
+        }
+        else
+        {
+            /* Normal LED control */
+            if(button_pressed(&S1))
+                LED_toggle(&D2);
+
+            if(button_pressed(&S2))
+                LED_toggle(&D3);
+
+            if(button_pressed(&S4))
+                LED_toggle(&D4);
+
+            if(button_pressed(&S5))
+                LED_toggle(&D5);
+        }
+
+    }
   /* USER CODE END 3 */
 }
 
@@ -226,7 +284,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 1;
+  htim1.Init.Prescaler = 83;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -268,20 +326,22 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 1 */
 
   /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 57600;
-  huart2.Init.WordLength = UART_WORDLENGTH_9B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_EVEN;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+	huart2.Instance = USART2;
+	huart2.Init.BaudRate = 57600;
+	huart2.Init.WordLength = UART_WORDLENGTH_8B;
+	huart2.Init.StopBits = UART_STOPBITS_1;
+	huart2.Init.Parity = UART_PARITY_NONE;
+	huart2.Init.Mode = UART_MODE_TX_RX;
+	huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+	huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+
   if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN USART2_Init 2 */
-
+  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(USART2_IRQn);
   /* USER CODE END USART2_Init 2 */
 
 }
@@ -351,27 +411,57 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PB7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+void USART2_IRQHandler(void)
+{
+    HAL_UART_IRQHandler(&huart2);
+}
+
+void EXTI9_5_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == GPIO_PIN_7)
     {
         pulse_count++;
-        last_pulse_tick = HAL_GetTick();
     }
 }
 
-void EXTI9_5_IRQHandler(void)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
+    if (huart->Instance == USART2)
+    {
+        if (buffer_index < 19)
+        {
+            main_buffer[buffer_index++] = rx_data;
+        }
+
+        if (rx_data == '\n')
+        {
+            main_buffer[buffer_index] = '\0';
+
+            if (strstr((char *)main_buffer, "@Stat&"))
+            {
+                stats_requested = 1;
+            }
+
+            buffer_index = 0;
+        }
+
+        HAL_UART_Receive_IT(&huart2, &rx_data, 1);
+    }
 }
 /* USER CODE END 4 */
 

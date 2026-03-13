@@ -9,22 +9,25 @@
 
 char stat_data[NUMBER_OF_STATS][SIZE];
 
+volatile uint8_t stats_requested = 0;
+bool alarm_checking = false;
+
 void stats_init(void)
 {
 	snprintf(stat_data[DATE], SIZE, "%s", "@YYYY/MM/DD HH:MM:SS\n");
-	snprintf(stat_data[DISTANCE], SIZE, "%-9s%6ld.%ld cm%c", "Distance:", (int32_t)(0), (int32_t)(0), '\n');
-	snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%4ld.%ld C\n", "Temperature:", (int32_t)(0), (int32_t)(0));
-	snprintf(stat_data[LIGHT], SIZE, "%-6s%10s lux\n", "Light:", "0000");
-	snprintf(stat_data[X_ACCELARATION], SIZE, "%-8s%6s g\n", "X accel:", "0.00");
-	snprintf(stat_data[Y_ACCELARATION], SIZE, "%-8s%6s g\n", "Z accel:", "0.00");
-	snprintf(stat_data[Z_ACCELARATION], SIZE, "%-8s%6s g\n", "Z accel:", "0.00");
-	snprintf(stat_data[UNSAFE_DRIVING], SIZE, "%-15s%5ld\n", "Unsafe driving:", (int32_t)(0));
-	snprintf(stat_data[IMPACT_DETECTED], SIZE, "%-17s%3ld\n", "Impact detected:", (int32_t)(0));
-	snprintf(stat_data[LOW_LIGHT_WARNING], SIZE, "%-18s%2ld\n", "Low-Light warning:", (int32_t)(0));
-	snprintf(stat_data[PROXIMITY_WARNING], SIZE, "%-18s%2ld\n", "Proximity warning:", (int32_t)(0));
-	snprintf(stat_data[HIGH_TEMPERATURE], SIZE, "%-17s%3ld\n", "High Temperature:", (int32_t)(0));
-	snprintf(stat_data[GPS_LATITUDE], SIZE, "%-8s%12s\n", "GPS lat:", "000.00000");
-	snprintf(stat_data[GPS_LONGITUDE], SIZE, "%-9s%9s\n&\n", "GPS long:", "000.00000");
+	snprintf(stat_data[DISTANCE], SIZE, "%-9s%5ld.%ld cm%c", "Distance:", (int32_t)(0), (int32_t)(0), '\n');
+	snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%2ld.%ld C\n", "Temperature:", (int32_t)(0), (int32_t)(0));
+	snprintf(stat_data[LIGHT], SIZE, "%-6s%9s lux\n", "Light:", "0000");
+	snprintf(stat_data[X_ACCELARATION], SIZE, "%-8s%5s g\n", "X accel:", "0.00");
+	snprintf(stat_data[Y_ACCELARATION], SIZE, "%-8s%5s g\n", "Z accel:", "0.00");
+	snprintf(stat_data[Z_ACCELARATION], SIZE, "%-8s%5s g\n", "Z accel:", "0.00");
+	snprintf(stat_data[UNSAFE_DRIVING], SIZE, "%-15s%4ld\n", "Unsafe driving:", (int32_t)(0));
+	snprintf(stat_data[IMPACT_DETECTED], SIZE, "%-17s%2ld\n", "Impact detected:", (int32_t)(0));
+	snprintf(stat_data[LOW_LIGHT_WARNING], SIZE, "%-18s%1ld\n", "Low-Light warning:", (int32_t)(0));
+	snprintf(stat_data[PROXIMITY_WARNING], SIZE, "%-18s%1ld\n", "Proximity warning:", (int32_t)(0));
+	snprintf(stat_data[HIGH_TEMPERATURE], SIZE, "%-17s%2ld\n", "High Temperature:", (int32_t)(0));
+	snprintf(stat_data[GPS_LATITUDE], SIZE, "%-8s%11s\n", "GPS lat:", "000.00000");
+	snprintf(stat_data[GPS_LONGITUDE], SIZE, "%-9s%8s\n&\n", "GPS long:", "000.00000");
 
 	return;
 }
@@ -33,23 +36,27 @@ void update_stat(Stat_type_e stat)
 {
 	switch(stat)
 	{
-		case DISTANCE:
-			snprintf(stat_data[DISTANCE], SIZE, "%-9s%6ld.%ld cm%c", "Distance:",
-					(int32_t)(average_distance / 10), (int32_t)abs(average_distance % 10), '\n');
+		case DATE:
 			break;
+
+		case DISTANCE:
+			float distance_cm = average_distance / 1.0f;
+			snprintf(stat_data[DISTANCE], SIZE, "%-9s%.1f cm\n", "Distance:", distance_cm);
+			break;
+
 		case TEMPERATURE:
-			snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%4ld.%ld C\n", "Temperature:",
-					(int32_t)(average_temperature / 10), (int32_t)abs(average_temperature % 10));
+			float temp_c = average_temperature / 10.0f;
+			snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%.1f C\n", "Temperature:", temp_c);
 			break;
 
 		case HIGH_TEMPERATURE:
 			snprintf(stat_data[HIGH_TEMPERATURE], SIZE, "%-17s%3ld\n", "High Temperature:",
-					average_temperature >= 30 ? (int32_t)(1) : (int32_t)(0));
+					(int32_t)(temperature_is_high()));
 			break;
 
 		case PROXIMITY_WARNING:
 			snprintf(stat_data[PROXIMITY_WARNING], SIZE, "%-18s%2ld\n", "Proximity warning:",
-					average_distance < 10 ? (int32_t)(1) : (int32_t)(0));
+					(int32_t)(proximity_warning()));
 			break;
 
 		default:
@@ -64,3 +71,10 @@ void transimit_stat(Stat_type_e stat)
 	return;
 }
 
+void transimit_all_stats(void)
+{
+	for(uint8_t i = 0; i < NUMBER_OF_STATS; i++)
+		transimit_stat(i);
+
+	return;
+}

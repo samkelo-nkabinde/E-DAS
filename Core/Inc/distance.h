@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <stdbool.h>
 
 #define DISTANCE_DATA_WINDOW 5
 
@@ -23,6 +24,7 @@ extern uint8_t distance_data_index;
 extern uint32_t average_distance;
 
 uint32_t get_pulse_width(void);
-void compute_average_distance(void);
+void compute_average_distance(uint32_t pulse_width);
+bool proximity_warning(void);
 
 #endif /* INC_DISTANCE_H_ */

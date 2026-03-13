@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <stdbool.h>
 
 #define TEMPERATURE_DATA_WINDOW 5
 
@@ -28,6 +29,6 @@ extern int32_t average_temperature;
 
 uint32_t get_final_pulse_count(uint32_t current_time);
 void compute_average_temperature(uint32_t final_pulse_count);
-void transimit_temperature(void);
+bool temperature_is_high(void);
 
 #endif /* INC_TEMPERATURE_H_ */
