@@ -30,7 +30,7 @@ void LED_blink_control(LED_t *led)
     if (!led->blink_enable)
         return;
 
-    if (HAL_GetTick() - led->blink_timer >= 250)
+    if (HAL_GetTick() - led->blink_timer >= 500)
     {
         led->blink_timer = HAL_GetTick();
         LED_toggle(led);
@@ -45,7 +45,7 @@ void LED_update(LED_t *led)
     }
     else
     {
-        if (HAL_GetTick() - led->blink_timer >= 250)
+        if (HAL_GetTick() - led->blink_timer >= 500)
         {
             led->blink_timer = HAL_GetTick();
             HAL_GPIO_TogglePin(led->port, led->pin);
