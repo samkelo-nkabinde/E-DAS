@@ -28,7 +28,7 @@ void update_date_stat(void)
         Error_Handler();
     }
 
-    snprintf(stat_data[DATE], SIZE, "@%d/%d/%d %d:%d:%d\n",
+    snprintf(stat_data[DATE], SIZE + 1, "@%04d/%02d/%02d %02d:%02d:%02d\n",
              2000 + sDate.Year, sDate.Month, sDate.Date,
              sTime.Hours, sTime.Minutes, sTime.Seconds);
 }
@@ -36,24 +36,27 @@ void update_date_stat(void)
 
 void stats_init(void)
 {
-	snprintf(stat_data[DATE], SIZE, "%s", "@YYYY/MM/DD HH:MM:SS\n");
-	snprintf(stat_data[DISTANCE], SIZE, "%-9s%5ld.%ld cm%c", "Distance:", (int32_t)(0), (int32_t)(0), '\n');
-	snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%2ld.%ld C\n", "Temperature:", (int32_t)(0), (int32_t)(0));
-	snprintf(stat_data[LIGHT], SIZE, "%-6s%9s lux\n", "Light:", "0000");
-	snprintf(stat_data[X_ACCELARATION], SIZE, "%-8s%5s g\n", "X accel:", "0.00");
-	snprintf(stat_data[Y_ACCELARATION], SIZE, "%-8s%5s g\n", "Z accel:", "0.00");
-	snprintf(stat_data[Z_ACCELARATION], SIZE, "%-8s%5s g\n", "Z accel:", "0.00");
-	snprintf(stat_data[UNSAFE_DRIVING], SIZE, "%-15s%4ld\n", "Unsafe driving:", (int32_t)(0));
-	snprintf(stat_data[IMPACT_DETECTED], SIZE, "%-17s%2ld\n", "Impact detected:", (int32_t)(0));
-	snprintf(stat_data[LOW_LIGHT_WARNING], SIZE, "%-18s%1ld\n", "Low-Light warning:", (int32_t)(0));
-	snprintf(stat_data[PROXIMITY_WARNING], SIZE, "%-18s%1ld\n", "Proximity warning:", (int32_t)(0));
-	snprintf(stat_data[HIGH_TEMPERATURE], SIZE, "%-17s%2ld\n", "High Temperature:", (int32_t)(0));
-	snprintf(stat_data[GPS_LATITUDE], SIZE, "%-8s%11s\n", "GPS lat:", "000.00000");
-	snprintf(stat_data[GPS_LONGITUDE], SIZE, "%-9s%8s\n&\n", "GPS long:", "000.00000");
+    // Line 1: 21 characters + \n = 22 total
+    snprintf(stat_data[DATE], 22+1, "%-21s\n", "@YYYY/MM/DD HH:MM:SS");
 
-	return;
+    // All following lines: 20 characters + \n = 21 total
+    // We use SIZE (22) which allows up to 21 chars + \0 terminator
+    snprintf(stat_data[DISTANCE], SIZE, "%-9s%6ld.%ld cm\n", "Distance:", (int32_t)(0), (int32_t)(0));
+    snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%4ld.%ld C\n", "Temperature:", (int32_t)(0), (int32_t)(0));
+    snprintf(stat_data[LIGHT], SIZE, "%-6s%9s lux\n", "Light:", "0000");
+    snprintf(stat_data[X_ACCELARATION], SIZE, "%-8s%9s g\n", "X accel:", "0.00");
+    snprintf(stat_data[Y_ACCELARATION], SIZE, "%-8s%9s g\n", "Y accel:", "0.00");
+    snprintf(stat_data[Z_ACCELARATION], SIZE, "%-8s%9s g\n", "Z accel:", "0.00");
+    snprintf(stat_data[UNSAFE_DRIVING], SIZE, "%-15s%5ld\n", "Unsafe driving:", (int32_t)(0));
+    snprintf(stat_data[IMPACT_DETECTED], SIZE, "%-17s%3ld\n", "Impact detected:", (int32_t)(0));
+    snprintf(stat_data[LOW_LIGHT_WARNING], SIZE, "%-18s%2ld\n", "Low-Light warning:", (int32_t)(0));
+    snprintf(stat_data[PROXIMITY_WARNING], SIZE, "%-18s%2ld\n", "Proximity warning:", (int32_t)(0));
+    snprintf(stat_data[HIGH_TEMPERATURE], SIZE, "%-17s%3ld\n", "High Temperature:", (int32_t)(0));
+    snprintf(stat_data[GPS_LATITUDE], SIZE, "%-8s%12s\n", "GPS lat:", "000.00000");
+    snprintf(stat_data[GPS_LONGITUDE], SIZE, "%-9s%11s\n", "GPS long:", "000.00000");
+
+    return;
 }
-
 void update_stat(Stat_type_e stat)
 {
 	switch(stat)

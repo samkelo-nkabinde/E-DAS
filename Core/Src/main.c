@@ -403,13 +403,13 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
 	huart2.Instance = USART2;
-	huart2.Init.BaudRate = 57600;
-	huart2.Init.WordLength = UART_WORDLENGTH_8B;
-	huart2.Init.StopBits = UART_STOPBITS_1;
-	huart2.Init.Parity = UART_PARITY_NONE;
-	huart2.Init.Mode = UART_MODE_TX_RX;
-	huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+	  huart2.Init.BaudRate = 57600;
+	  huart2.Init.WordLength = UART_WORDLENGTH_9B;
+	  huart2.Init.StopBits = UART_STOPBITS_1;
+	  huart2.Init.Parity = UART_PARITY_EVEN;
+	  huart2.Init.Mode = UART_MODE_TX_RX;
+	  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+	  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
 	if (HAL_UART_Init(&huart2) != HAL_OK)
 	{
 		Error_Handler();
@@ -521,25 +521,27 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART2)
     {
-        if (buffer_index >= 19)
+        // Prevent overflow: 20 is the size of main_buffer
+        if (buffer_index < 19)
         {
-            buffer_index = 0;
+            main_buffer[buffer_index++] = rx_data;
         }
-
-        main_buffer[buffer_index++] = rx_data;
+        else
+        {
+            buffer_index = 0; // Reset if too long
+        }
 
         if (rx_data == '\n' || rx_data == '\r')
         {
             main_buffer[buffer_index] = '\0';
-
             if (strstr((char *)main_buffer, "@Stat&"))
             {
                 stats_requested = 1;
             }
-
             buffer_index = 0;
         }
 
+        // ALWAYS restart the interrupt at the very end
         HAL_UART_Receive_IT(&huart2, &rx_data, 1);
     }
 }

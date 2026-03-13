@@ -8,5 +8,5 @@
 ../Core/Src/main.c:507:6:EXTI9_5_IRQHandler	1
 ../Core/Src/main.c:512:6:HAL_GPIO_EXTI_Callback	2
 ../Core/Src/main.c:520:6:HAL_UART_RxCpltCallback	6
-../Core/Src/main.c:547:6:HAL_UART_ErrorCallback	2
-../Core/Src/main.c:561:6:Error_Handler	1
+../Core/Src/main.c:549:6:HAL_UART_ErrorCallback	2
+../Core/Src/main.c:563:6:Error_Handler	1
