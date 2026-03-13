@@ -47,8 +47,12 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+RTC_HandleTypeDef hrtc;
+
 TIM_HandleTypeDef htim1;
+
 UART_HandleTypeDef huart2;
+
 #define RX_BUFFER_SIZE 7
 uint8_t rx_buffer[RX_BUFFER_SIZE];
 uint8_t rx_data;
@@ -64,11 +68,13 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_RTC_Init(void);
+
 void USART2_IRQHandler(void);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 void EXTI9_5_IRQHandler(void);
-
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -123,10 +129,12 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
+  MX_RTC_Init();
 
   HAL_TIM_Base_Start(&htim1);
   /* USER CODE BEGIN 2 */
 
+  update_date_stat();
 
   LED_on(&D2);
   LED_on(&D3);
@@ -155,8 +163,18 @@ int main(void)
   	      compute_average_distance(pulse);
   	      last_ultra_time = HAL_GetTick();
   	  }
+  	  static uint32_t last_temp_time = 0;
 
-  	  compute_average_temperature( get_final_pulse_count(HAL_GetTick()));
+	if(HAL_GetTick() - last_temp_time >= 1000)
+	{
+
+		uint32_t captured_pulses = pulse_count;
+		pulse_count = 0;
+
+		compute_average_temperature(captured_pulses);
+
+		last_temp_time = HAL_GetTick();
+	}
 
   	  if(stats_requested)
   	  {
@@ -164,7 +182,7 @@ int main(void)
   		   update_stat(TEMPERATURE);
   		   update_stat(HIGH_TEMPERATURE);
   		   update_stat(PROXIMITY_WARNING);
-
+  		   update_date_stat();
   	       transimit_all_stats();
   	       stats_requested = 0;
   	  }
@@ -218,6 +236,8 @@ int main(void)
     }
   /* USER CODE END 3 */
 }
+  /* USER CODE END 3 */
+
 
 /**
   * @brief System Clock Configuration
@@ -236,9 +256,10 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = 16;
@@ -263,6 +284,61 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief RTC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_RTC_Init(void)
+{
+
+  /* USER CODE BEGIN RTC_Init 0 */
+
+  /* USER CODE END RTC_Init 0 */
+
+  /* USER CODE BEGIN RTC_Init 1 */
+
+  /* USER CODE END RTC_Init 1 */
+
+  /** Initialize RTC Only
+  */
+  hrtc.Instance = RTC;
+  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+  hrtc.Init.AsynchPrediv = 127;
+  hrtc.Init.SynchPrediv = 255;
+  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+  if (HAL_RTC_Init(&hrtc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RTC_Init 2 */
+  RTC_DateTypeDef sDate = {0};
+  RTC_TimeTypeDef sTime = {0};
+
+  sTime.Hours = 22;
+  sTime.Minutes = 12;
+  sTime.Seconds = 42;
+  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+  if(HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+  {
+      Error_Handler();
+  }
+
+  sDate.Year = 26;      // 2026
+  sDate.Month = 2;
+  sDate.Date = 26;
+  sDate.WeekDay = RTC_WEEKDAY_THURSDAY;
+  if(HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
+  {
+      Error_Handler();
+  }
+  /* USER CODE END RTC_Init 2 */
+
 }
 
 /**
@@ -334,15 +410,17 @@ static void MX_USART2_UART_Init(void)
 	huart2.Init.Mode = UART_MODE_TX_RX;
 	huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
 	huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+	if (HAL_UART_Init(&huart2) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN USART2_Init 2 */
+	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(USART2_IRQn);
-  /* USER CODE END USART2_Init 2 */
+	HAL_NVIC_SetPriority(USART2_IRQn, 1, 0);
+	HAL_NVIC_EnableIRQ(USART2_IRQn);
+	/* USER CODE END USART2_Init 2 */
 
 }
 
@@ -411,7 +489,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PB7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -443,12 +521,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART2)
     {
-        if (buffer_index < 19)
+        if (buffer_index >= 19)
         {
-            main_buffer[buffer_index++] = rx_data;
+            buffer_index = 0;
         }
 
-        if (rx_data == '\n')
+        main_buffer[buffer_index++] = rx_data;
+
+        if (rx_data == '\n' || rx_data == '\r')
         {
             main_buffer[buffer_index] = '\0';
 
@@ -460,6 +540,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             buffer_index = 0;
         }
 
+        HAL_UART_Receive_IT(&huart2, &rx_data, 1);
+    }
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    if(huart->Instance == USART2)
+    {
+        __HAL_UART_CLEAR_OREFLAG(huart);
         HAL_UART_Receive_IT(&huart2, &rx_data, 1);
     }
 }

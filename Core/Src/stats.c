@@ -12,6 +12,28 @@ char stat_data[NUMBER_OF_STATS][SIZE];
 volatile uint8_t stats_requested = 0;
 bool alarm_checking = false;
 
+void update_date_stat(void)
+{
+    RTC_DateTypeDef sDate;
+    RTC_TimeTypeDef sTime;
+
+    if(HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+
+    if(HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    snprintf(stat_data[DATE], SIZE, "@%d/%d/%d %d:%d:%d\n",
+             2000 + sDate.Year, sDate.Month, sDate.Date,
+             sTime.Hours, sTime.Minutes, sTime.Seconds);
+}
+
+
 void stats_init(void)
 {
 	snprintf(stat_data[DATE], SIZE, "%s", "@YYYY/MM/DD HH:MM:SS\n");
@@ -45,7 +67,7 @@ void update_stat(Stat_type_e stat)
 			break;
 
 		case TEMPERATURE:
-			float temp_c = average_temperature / 10.0f;
+			float temp_c = average_temperature / 100.0f;
 			snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%.1f C\n", "Temperature:", temp_c);
 			break;
 
