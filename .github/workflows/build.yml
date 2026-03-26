@@ -1,1 +1,34 @@
 name: STM32 Build
+on:
+  push:
+    branches: main
+
+jobs:
+  cppcheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck
+      - name: Run cppcheck
+        run: |
+          cppcheck \
+            --enable=all \
+            --inconclusive \
+            --std=c11 \
+            --error-exitcode=1 \
+            --template=gcc \
+            -I Core/Inc \
+            -i Drivers \
+            -i Middlewares \
+            Core/Src/main.c \
+            Core/Src/led.c \
+            Core/Src/temperature.c \
+            Core/Src/stats.c \
+            Core/Src/distance.c \
+            Core/Src/kalman_filter.c
