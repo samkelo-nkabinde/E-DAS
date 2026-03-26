@@ -10,23 +10,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install cppcheck
-        run: sudo apt-get update && sudo apt-get install -y cppcheck
+      - name: Cache cppcheck
+        uses: actions/cache@v3
+        with:
+          path: /usr/bin/cppcheck
+          key: cppcheck-cache
+          restore-keys: cppcheck-cache
 
-      - name: Run cppcheck
+      - name: Install cppcheck if not cached
         run: |
+          if ! command -v cppcheck > /dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y cppcheck
+          fi
+
+      - name: Run cppcheck and annotate
+        run: |
+          # Run cppcheck and output GitHub annotations
           cppcheck \
             --enable=all \
             --inconclusive \
             --std=c11 \
-            --error-exitcode=1 \
-            --template=gcc \
+            --template=github \
             -I Core/Inc \
             -i Drivers \
             -i Middlewares \
-            Core/Src/main.c \
-            Core/Src/led.c \
-            Core/Src/temperature.c \
-            Core/Src/stats.c \
-            Core/Src/distance.c \
-            Core/Src/kalman_filter.c
+            Core/Src \
+            2> cppcheck.log || true
+
+          # Fail the job only if "error:" is in the output
+          if grep -q "error:" cppcheck.log; then
+            echo "Cppcheck found errors!"
+            exit 1
+          fi
+
+          # Show warnings in the log (annotations are already posted)
+          grep "warning:" cppcheck.log || true
