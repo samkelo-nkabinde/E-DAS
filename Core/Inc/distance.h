@@ -17,14 +17,12 @@
 #include <limits.h>
 #include <stdbool.h>
 
-#define DISTANCE_DATA_WINDOW 5
+#include "kalman_filter.h"
 
-extern uint32_t distance_data[DISTANCE_DATA_WINDOW];
-extern uint8_t distance_data_index;
-extern uint32_t average_distance;
+extern float average_distance;
 
 uint32_t get_pulse_width(void);
-void compute_average_distance(uint32_t pulse_width);
+float compute_distance(uint32_t pulse_width);
 bool proximity_warning(void);
 
 #endif /* INC_DISTANCE_H_ */

@@ -13,6 +13,7 @@ void LED_on(LED_t *led)
 	led->state = 1;
 	HAL_GPIO_WritePin(led->port, led->pin, GPIO_PIN_SET);
 }
+
 void LED_off(LED_t *led)
 {
 	led->state = 0;

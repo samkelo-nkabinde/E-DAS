@@ -18,7 +18,7 @@ typedef struct
 
 } kalman_filter_t;
 
-void  kalman_init(kalman_filter_t *kf, float q, float r, float initial);
+void  kalman_init(kalman_filter_t *kf, float initial);
 float kalman_update(kalman_filter_t *kf, float measurement);
 
 #endif /* INC_KALMAN_FILTER_H_ */

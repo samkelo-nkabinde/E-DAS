@@ -60,7 +60,6 @@ uint8_t main_buffer[20];
 uint8_t buffer_index = 0;
 
 /* USER CODE BEGIN PV */
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -116,6 +115,8 @@ int main(void)
 
   stats_init();
 
+  static kalman_filter_t kf_distance;
+  static kalman_filter_t kf_temperature;
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -130,7 +131,6 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_RTC_Init();
-
   HAL_TIM_Base_Start(&htim1);
   /* USER CODE BEGIN 2 */
 
@@ -145,95 +145,93 @@ int main(void)
   while (HAL_GetTick() - start < 250);
   HAL_UART_Transmit(&huart2, (uint8_t*)student_number, strlen(student_number), 1000 );
 
-
   HAL_UART_Receive_IT(&huart2, &rx_data, 1);
 
+  static uint32_t last_ultra_time = 0;
+  static uint32_t last_temp_time = 0;
+
+  kalman_init(&kf_distance, compute_distance(get_pulse_width()));
+  kalman_init(&kf_temperature, compute_temperature(get_final_pulse_count()));
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-    {
+  {
 
-  	  static uint32_t last_ultra_time = 0;
-
-  	  if(HAL_GetTick() - last_ultra_time > 60)
-  	  {
-  	      uint32_t pulse = get_pulse_width();
-  	      compute_average_distance(pulse);
-  	      last_ultra_time = HAL_GetTick();
-  	  }
-  	  static uint32_t last_temp_time = 0;
+	if(HAL_GetTick() - last_ultra_time > 60)
+	{
+	  uint32_t pulse = get_pulse_width();
+	  average_distance = kalman_update(&kf_distance, compute_distance(pulse));
+	  last_ultra_time = HAL_GetTick();
+	}
 
 	if(HAL_GetTick() - last_temp_time >= 1000)
 	{
-
-		uint32_t captured_pulses = pulse_count;
+		uint32_t captured_pulses = get_final_pulse_count();
 		pulse_count = 0;
-
-		compute_average_temperature(captured_pulses);
-
+		average_temperature = kalman_update(&kf_temperature, compute_temperature(captured_pulses));
 		last_temp_time = HAL_GetTick();
 	}
 
-  	  if(stats_requested)
-  	  {
-  		   update_stat(DISTANCE);
-  		   update_stat(TEMPERATURE);
-  		   update_stat(HIGH_TEMPERATURE);
-  		   update_stat(PROXIMITY_WARNING);
-  		   update_date_stat();
-  	       transimit_all_stats();
-  	       stats_requested = 0;
-  	  }
+	if(stats_requested)
+	{
+	   update_stat(DISTANCE);
+	   update_stat(TEMPERATURE);
+	   update_stat(HIGH_TEMPERATURE);
+	   update_stat(PROXIMITY_WARNING);
+	   update_date_stat();
+	   transimit_all_stats();
+	   stats_requested = 0;
+	}
 
-        /* Enable emergency mode */
-        if(button_pressed(&S3) && alarm_checking == false)
-        {
-            LED_off(&D2);
-            LED_off(&D3);
-            LED_off(&D4);
-            LED_off(&D5);
-            alarm_checking = true;
-        }
+	/* Enable emergency mode */
+	if(button_pressed(&S3) && alarm_checking == false)
+	{
+		LED_off(&D2);
+		LED_off(&D3);
+		LED_off(&D4);
+		LED_off(&D5);
+		alarm_checking = true;
+	}
 
-        /* Emergency mode */
-        if(alarm_checking)
-        {
-            if(proximity_warning())
-                LED_blink_control(&D2);
-            else
-                LED_off(&D2);
+	/* Emergency mode */
+	if(alarm_checking)
+	{
+		if(proximity_warning())
+			LED_blink_control(&D2);
+		else
+			LED_off(&D2);
 
-            if(temperature_is_high())
-                LED_blink_control(&D5);
-            else
-                LED_off(&D5);
+		if(temperature_is_high())
+			LED_blink_control(&D5);
+		else
+			LED_off(&D5);
 
-            /* Disable emergency mode */
-            if(button_pressed(&S1) || button_pressed(&S2) ||
-               button_pressed(&S4) || button_pressed(&S5))
-            {
-                alarm_checking = false;
-            }
-        }
-        else
-        {
-            /* Normal LED control */
-            if(button_pressed(&S1))
-                LED_toggle(&D2);
+		/* Disable emergency mode */
+		if(button_pressed(&S1) || button_pressed(&S2) ||
+		   button_pressed(&S4) || button_pressed(&S5))
+		{
+			alarm_checking = false;
+		}
+	}
+	else
+	{
+		/* Normal LED control */
+		if(button_pressed(&S1))
+			LED_toggle(&D2);
 
-            if(button_pressed(&S2))
-                LED_toggle(&D3);
+		if(button_pressed(&S2))
+			LED_toggle(&D3);
 
-            if(button_pressed(&S4))
-                LED_toggle(&D4);
+		if(button_pressed(&S4))
+			LED_toggle(&D4);
 
-            if(button_pressed(&S5))
-                LED_toggle(&D5);
-        }
+		if(button_pressed(&S5))
+			LED_toggle(&D5);
+	}
 
-    }
+   }
   /* USER CODE END 3 */
 }
   /* USER CODE END 3 */

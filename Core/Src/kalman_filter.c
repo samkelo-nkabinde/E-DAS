@@ -10,13 +10,13 @@
 /*
  * Initials a kalman filter instance
  */
-void  kalman_init(kalman_filter_t *kf, float q, float r, float initial)
+void  kalman_init(kalman_filter_t *kf, float initial)
 {
-    kf->q = q;
-    kf->r = r;
     kf->x = initial;
     kf->p = 1.0f;
     kf->k = 0.0f;
+    kf->q = 0.01;
+    kf->r = 0.1;
 
     return;
 }

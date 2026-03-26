@@ -7,8 +7,7 @@
 
 #include "distance.h"
 
-uint32_t distance_data[DISTANCE_DATA_WINDOW] = {0};
-uint8_t distance_data_index = 0;
+kalman_filter_t kf_distance;
 uint32_t average_distance = UINT_MAX;
 
 
@@ -36,36 +35,13 @@ uint32_t get_pulse_width()
 
 }
 
-void compute_average_distance(uint32_t pulse_width)
+float compute_distance(uint32_t pulse_width)
 {
-	uint32_t current_distance = pulse_width / 58;
-
-	if(current_distance > 400)
-	    return;
-
-	distance_data[distance_data_index] = current_distance;
-	distance_data_index = (distance_data_index + 1) % DISTANCE_DATA_WINDOW;
-
-	uint32_t sum = 0;
-	uint8_t count = 0;
-
-	for(int i = 0; i < DISTANCE_DATA_WINDOW; i++)
-	{
-		if(distance_data[i] != 0)
-		{
-			sum += distance_data[i];
-			count++;
-		}
-	}
-
-	if(count > 0)
-		average_distance = sum / count;
-
-	return;
+	return (float)(pulse_width / 58);
 }
 
 bool proximity_warning(void)
 {
-	return average_distance <= 10;
+	return average_distance <= 10.0f;
 }
 

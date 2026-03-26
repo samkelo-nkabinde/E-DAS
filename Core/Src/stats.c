@@ -18,15 +18,10 @@ void update_date_stat(void)
     RTC_TimeTypeDef sTime;
 
     if(HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-    {
         Error_Handler();
-    }
-
 
     if(HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
-    {
         Error_Handler();
-    }
 
     snprintf(stat_data[DATE], SIZE + 1, "@%04d/%02d/%02d %02d:%02d:%02d\n",
              2000 + sDate.Year, sDate.Month, sDate.Date,
@@ -57,6 +52,7 @@ void stats_init(void)
 
     return;
 }
+
 void update_stat(Stat_type_e stat)
 {
 	switch(stat)
@@ -87,6 +83,7 @@ void update_stat(Stat_type_e stat)
 		default:
 			break;
 	}
+
 	return;
 }
 

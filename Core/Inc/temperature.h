@@ -13,22 +13,15 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
 #include <stdbool.h>
 
-#define TEMPERATURE_DATA_WINDOW 5
 
 extern volatile uint32_t pulse_count;
 extern volatile uint32_t last_pulse_tick;
-
-extern int32_t temperature_data[TEMPERATURE_DATA_WINDOW];
-extern uint8_t temperature_data_index;
-extern int32_t average_temperature;
+extern float average_temperature;
 
 uint32_t get_final_pulse_count(uint32_t current_time);
-void compute_average_temperature(uint32_t final_pulse_count);
+float compute_temperature(uint32_t final_pulse_count);
 bool temperature_is_high(void);
 
 #endif /* INC_TEMPERATURE_H_ */
