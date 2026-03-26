@@ -23,7 +23,6 @@ jobs:
             --template=github \
             -I Core/Inc \
             -i Drivers \
-            -i Middlewares \
             Core/Src \
             2>&1 | tee cppcheck.log
 
