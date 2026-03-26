@@ -25,13 +25,13 @@ jobs:
             -i Drivers \
             -i Middlewares \
             Core/Src \
-            2> cppcheck.log || true
+            2>&1 | tee cppcheck.log
 
-          # Fail the job only if "error:" is in the output
-          if grep -q "error:" cppcheck.log; then
-            echo "Cppcheck found errors!"
-            exit 1
-          fi
+          grep -q "::error" cppcheck.log && exit 1 || true
 
-          # Show warnings in the log (annotations are already posted)
-          grep "warning:" cppcheck.log || true
+      - name: Upload cppcheck report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cppcheck-report
+          path: cppcheck.log
