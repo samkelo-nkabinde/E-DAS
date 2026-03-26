@@ -403,21 +403,18 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
 	huart2.Instance = USART2;
-	  huart2.Init.BaudRate = 57600;
-	  huart2.Init.WordLength = UART_WORDLENGTH_9B;
-	  huart2.Init.StopBits = UART_STOPBITS_1;
-	  huart2.Init.Parity = UART_PARITY_EVEN;
-	  huart2.Init.Mode = UART_MODE_TX_RX;
-	  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+    huart2.Init.BaudRate = 57600;
+    huart2.Init.WordLength = UART_WORDLENGTH_9B;
+    huart2.Init.StopBits = UART_STOPBITS_1;
+    huart2.Init.Parity = UART_PARITY_EVEN;
+    huart2.Init.Mode = UART_MODE_TX_RX;
+    huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    huart2.Init.OverSampling = UART_OVERSAMPLING_16;
 	if (HAL_UART_Init(&huart2) != HAL_OK)
 	{
 		Error_Handler();
 	}
 	/* USER CODE BEGIN USART2_Init 2 */
-	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
 	HAL_NVIC_SetPriority(USART2_IRQn, 1, 0);
 	HAL_NVIC_EnableIRQ(USART2_IRQn);
 	/* USER CODE END USART2_Init 2 */
@@ -493,7 +490,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
   /* USER CODE END MX_GPIO_Init_2 */
 }
