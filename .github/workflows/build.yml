@@ -10,23 +10,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Cache cppcheck
-        uses: actions/cache@v3
-        with:
-          path: /usr/bin/cppcheck
-          key: cppcheck-cache
-          restore-keys: cppcheck-cache
-
-      - name: Install cppcheck if not cached
-        run: |
-          if ! command -v cppcheck > /dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y cppcheck
-          fi
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
 
       - name: Run cppcheck and annotate
         run: |
-          # Run cppcheck and output GitHub annotations
           cppcheck \
             --enable=all \
             --inconclusive \
