@@ -30,6 +30,7 @@ jobs:
           cppcheck \
             --enable=all \
             --inconclusive \
+            --force \
             --std=c11 \
             --template=github \
             -I Core/Inc \
