@@ -1,5 +1,5 @@
 ../Core/Src/stats.c:15:6:update_date_stat	64	static
-../Core/Src/stats.c:37:6:stats_init	16	static
-../Core/Src/stats.c:60:6:update_stat	32	static
-../Core/Src/stats.c:93:6:transimit_stat	24	static
-../Core/Src/stats.c:99:6:transimit_all_stats	16	static
+../Core/Src/stats.c:32:6:stats_init	16	static
+../Core/Src/stats.c:56:6:update_stat	32	static
+../Core/Src/stats.c:90:6:transimit_stat	24	static
+../Core/Src/stats.c:96:6:transimit_all_stats	16	static

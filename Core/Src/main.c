@@ -30,6 +30,7 @@
 #include "temperature.h"
 #include "distance.h"
 #include "stats.h"
+#include "uart_handle.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,12 +53,8 @@ RTC_HandleTypeDef hrtc;
 TIM_HandleTypeDef htim1;
 
 UART_HandleTypeDef huart2;
-
-#define RX_BUFFER_SIZE 7
-uint8_t rx_buffer[RX_BUFFER_SIZE];
-uint8_t rx_data;
-uint8_t main_buffer[20];
-uint8_t buffer_index = 0;
+DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
 /* USER CODE END PV */
@@ -65,15 +62,10 @@ uint8_t buffer_index = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_RTC_Init(void);
-
-void USART2_IRQHandler(void);
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
-void EXTI9_5_IRQHandler(void);
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -128,10 +120,10 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_RTC_Init();
-  HAL_TIM_Base_Start(&htim1);
   /* USER CODE BEGIN 2 */
 
   update_date_stat();
@@ -141,101 +133,29 @@ int main(void)
   LED_on(&D4);
   LED_on(&D5);
 
-  const char *student_number = "*28118944#\n";
-  while (HAL_GetTick() - start < 250);
-  HAL_UART_Transmit(&huart2, (uint8_t*)student_number, strlen(student_number), 1000 );
+//  const char *student_number = "*28118944#\n";
+//  while (HAL_GetTick() - start < 250);
+//  HAL_UART_Transmit(&huart2, (uint8_t*)student_number, strlen(student_number), 1000 );
+//
+//  HAL_UART_Receive_IT(&huart2, &rx_data, 1);
 
-  HAL_UART_Receive_IT(&huart2, &rx_data, 1);
-
-  static uint32_t last_ultra_time = 0;
-  static uint32_t last_temp_time = 0;
-
-  kalman_init(&kf_distance, compute_distance(get_pulse_width()));
-  kalman_init(&kf_temperature, compute_temperature(get_final_pulse_count()));
+//  static uint32_t last_ultra_time = 0;
+//  static uint32_t last_temp_time = 0;
+//
+//  kalman_init(&kf_distance, compute_distance(get_pulse_width()));
+//  kalman_init(&kf_temperature, compute_temperature(get_final_pulse_count()));
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* USER CODE END WHILE */
 
-	if(HAL_GetTick() - last_ultra_time > 60)
-	{
-	  uint32_t pulse = get_pulse_width();
-	  average_distance = kalman_update(&kf_distance, compute_distance(pulse));
-	  last_ultra_time = HAL_GetTick();
-	}
-
-	if(HAL_GetTick() - last_temp_time >= 1000)
-	{
-		uint32_t captured_pulses = get_final_pulse_count();
-		pulse_count = 0;
-		average_temperature = kalman_update(&kf_temperature, compute_temperature(captured_pulses));
-		last_temp_time = HAL_GetTick();
-	}
-
-	if(stats_requested)
-	{
-	   update_stat(DISTANCE);
-	   update_stat(TEMPERATURE);
-	   update_stat(HIGH_TEMPERATURE);
-	   update_stat(PROXIMITY_WARNING);
-	   update_date_stat();
-	   transimit_all_stats();
-	   stats_requested = 0;
-	}
-
-	/* Enable emergency mode */
-	if(button_pressed(&S3) && alarm_checking == false)
-	{
-		LED_off(&D2);
-		LED_off(&D3);
-		LED_off(&D4);
-		LED_off(&D5);
-		alarm_checking = true;
-	}
-
-	/* Emergency mode */
-	if(alarm_checking)
-	{
-		if(proximity_warning())
-			LED_blink_control(&D2);
-		else
-			LED_off(&D2);
-
-		if(temperature_is_high())
-			LED_blink_control(&D5);
-		else
-			LED_off(&D5);
-
-		/* Disable emergency mode */
-		if(button_pressed(&S1) || button_pressed(&S2) ||
-		   button_pressed(&S4) || button_pressed(&S5))
-		{
-			alarm_checking = false;
-		}
-	}
-	else
-	{
-		/* Normal LED control */
-		if(button_pressed(&S1))
-			LED_toggle(&D2);
-
-		if(button_pressed(&S2))
-			LED_toggle(&D3);
-
-		if(button_pressed(&S4))
-			LED_toggle(&D4);
-
-		if(button_pressed(&S5))
-			LED_toggle(&D5);
-	}
-
-   }
+    /* USER CODE BEGIN 3 */
+  }
   /* USER CODE END 3 */
 }
-  /* USER CODE END 3 */
-
 
 /**
   * @brief System Clock Configuration
@@ -400,22 +320,41 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 1 */
 
   /* USER CODE END USART2_Init 1 */
-	huart2.Instance = USART2;
-    huart2.Init.BaudRate = 57600;
-    huart2.Init.WordLength = UART_WORDLENGTH_9B;
-    huart2.Init.StopBits = UART_STOPBITS_1;
-    huart2.Init.Parity = UART_PARITY_EVEN;
-    huart2.Init.Mode = UART_MODE_TX_RX;
-    huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-	if (HAL_UART_Init(&huart2) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	/* USER CODE BEGIN USART2_Init 2 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 57600;
+  huart2.Init.WordLength = UART_WORDLENGTH_9B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_EVEN;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
 	HAL_NVIC_SetPriority(USART2_IRQn, 1, 0);
 	HAL_NVIC_EnableIRQ(USART2_IRQn);
-	/* USER CODE END USART2_Init 2 */
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+  /* DMA1_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 
 }
 
@@ -484,7 +423,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PB7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -494,10 +433,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void USART2_IRQHandler(void)
-{
-    HAL_UART_IRQHandler(&huart2);
-}
 
 void EXTI9_5_IRQHandler(void)
 {
@@ -512,42 +447,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if (huart->Instance == USART2)
-    {
-        // Prevent overflow: 20 is the size of main_buffer
-        if (buffer_index < 19)
-        {
-            main_buffer[buffer_index++] = rx_data;
-        }
-        else
-        {
-            buffer_index = 0; // Reset if too long
-        }
-
-        if (rx_data == '\n' || rx_data == '\r')
-        {
-            main_buffer[buffer_index] = '\0';
-            if (strstr((char *)main_buffer, "@Stat&"))
-            {
-                stats_requested = 1;
-            }
-            buffer_index = 0;
-        }
-
-        // ALWAYS restart the interrupt at the very end
-        HAL_UART_Receive_IT(&huart2, &rx_data, 1);
-    }
-}
-
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
-    if(huart->Instance == USART2)
-    {
-        __HAL_UART_CLEAR_OREFLAG(huart);
-        HAL_UART_Receive_IT(&huart2, &rx_data, 1);
-    }
+	if (huart->Instance == g_uart2.huart->Instance)
+	{
+		HAL_UART_AbortReceive(huart);
+		HAL_UART_Receive_DMA(huart, g_uart2.rx_buffer, UART_RX_BUFFER_SIZE);
+		__HAL_UART_ENABLE_IT(huart, UART_IT_IDLE);
+	}
+
+	return;
 }
 /* USER CODE END 4 */
 
