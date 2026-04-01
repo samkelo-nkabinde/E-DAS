@@ -15,7 +15,7 @@
 #include <stdint.h>
 
 
-#define UART_TX_BUFFER_SIZE 256
+#define UART_TX_BUFFER_SIZE 1024
 #define UART_RX_BUFFER_SIZE 128
 
 typedef struct

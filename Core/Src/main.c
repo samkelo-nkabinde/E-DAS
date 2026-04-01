@@ -133,9 +133,9 @@ int main(void)
   LED_on(&D4);
   LED_on(&D5);
 
-//  const char *student_number = "*28118944#\n";
-//  while (HAL_GetTick() - start < 250);
-//  HAL_UART_Transmit(&huart2, (uint8_t*)student_number, strlen(student_number), 1000 );
+  const char *student_number = "*28118944#\n";
+  while (HAL_GetTick() - start < 250);
+  UART_Transmit_Async(&g_uart2, (uint8_t *)student_number, strlen(student_number));
 //
 //  HAL_UART_Receive_IT(&huart2, &rx_data, 1);
 
