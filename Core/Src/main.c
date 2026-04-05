@@ -28,9 +28,8 @@
 #include "led.h"
 #include "button.h"
 #include "temperature.h"
-#include "distance.h"
-#include "stats.h"
 #include "uart_handle.h"
+#include "kalman_filter.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +47,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
+
 RTC_HandleTypeDef hrtc;
 
 TIM_HandleTypeDef htim1;
@@ -66,13 +67,13 @@ static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_RTC_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
-
+char buffer[50];
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
 
 /**
@@ -105,9 +106,6 @@ int main(void)
   Button_t S4 = {GPIOB, GPIO_PIN_6, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
   Button_t S5 = {GPIOB, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
 
-  stats_init();
-
-  static kalman_filter_t kf_distance;
   static kalman_filter_t kf_temperature;
   /* USER CODE END Init */
 
@@ -124,10 +122,9 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_RTC_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-
-  update_date_stat();
-
+  UART_System_Init(&g_uart2, &huart2);
   LED_on(&D2);
   LED_on(&D3);
   LED_on(&D4);
@@ -136,14 +133,9 @@ int main(void)
   const char *student_number = "*28118944#\n";
   while (HAL_GetTick() - start < 250);
   UART_Transmit_Async(&g_uart2, (uint8_t *)student_number, strlen(student_number));
-//
-//  HAL_UART_Receive_IT(&huart2, &rx_data, 1);
 
-//  static uint32_t last_ultra_time = 0;
-//  static uint32_t last_temp_time = 0;
-//
-//  kalman_init(&kf_distance, compute_distance(get_pulse_width()));
-//  kalman_init(&kf_temperature, compute_temperature(get_final_pulse_count()));
+  kalman_init(&kf_temperature, compute_temperature(get_final_pulse_count()));
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -151,7 +143,57 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+	  LED_blink_control(&D3);
+	  LED_blink_control(&D5);
 
+	  if (button_pressed(&S1))
+	  		  LED_toggle(&D2);
+
+	  if (button_pressed(&S4))
+	  		  LED_toggle(&D4);
+
+	  if (button_pressed(&S2))
+	  {
+		  D3.blink_enable = !D3.blink_enable;
+
+		  if (!D3.blink_enable)
+			  LED_off(&D3);
+		  else
+			  D3.blink_timer = HAL_GetTick();
+	  }
+
+	  if (button_pressed(&S5))
+	  {
+		  D4.blink_enable = !D4.blink_enable;
+
+		  if (!D4.blink_enable)
+			  LED_off(&D4);
+		  else
+			  D4.blink_timer = HAL_GetTick();
+	  }
+	 static uint32_t last_temp_time = 0;
+
+	if(HAL_GetTick() - last_temp_time >= 1000)
+	{
+
+		uint32_t captured_pulses = get_final_pulse_count();
+
+	    float raw_temp = compute_temperature(captured_pulses);
+
+	    average_temperature = kalman_update(&kf_temperature, raw_temp);
+
+//	    sprintf(buffer, "Temp: %.2f C (pulses=%lu)\r\n", average_temperature, captured_pulses);
+//	    UART_Transmit_Async(&g_uart2, (uint8_t *)buffer, strlen(buffer));
+
+		last_temp_time = HAL_GetTick();
+	  }
+
+	  if (button_pressed(&S3))
+	  {
+		  average_temperature = kalman_update(&kf_temperature, average_temperature);
+		  sprintf(buffer, "Temperature: %.2f C\r\n", average_temperature);
+		  UART_Transmit_Async(&g_uart2, (uint8_t *)buffer, 22);
+	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -202,6 +244,40 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
 }
 
 /**
@@ -350,10 +426,10 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA1_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 
 }
@@ -377,10 +453,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LED_D5_Pin|LED_D4_Pin|LED_D3_Pin|GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LED_D5_Pin|LED_D4_Pin|LED_D3_Pin|GPIO_PIN_7
+                          |GPIO_PIN_11|GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1|GPIO_PIN_2, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_D2_GPIO_Port, LED_D2_Pin, GPIO_PIN_RESET);
@@ -397,8 +474,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED_D5_Pin LED_D4_Pin LED_D3_Pin PA7 */
-  GPIO_InitStruct.Pin = LED_D5_Pin|LED_D4_Pin|LED_D3_Pin|GPIO_PIN_7;
+  /*Configure GPIO pins : LED_D5_Pin LED_D4_Pin LED_D3_Pin PA7
+                           PA11 PA12 */
+  GPIO_InitStruct.Pin = LED_D5_Pin|LED_D4_Pin|LED_D3_Pin|GPIO_PIN_7
+                          |GPIO_PIN_11|GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -416,11 +495,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB13 PB14 PB15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+  /*Configure GPIO pins : PB1 PB2 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB13 PB14 PB15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LED_D2_Pin */
@@ -437,7 +522,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
   /* USER CODE END MX_GPIO_Init_2 */
 }
@@ -454,6 +539,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (GPIO_Pin == GPIO_PIN_7)
     {
         pulse_count++;
+        sprintf(buffer, "Temp: 0 C (pulses=%lu)\r\n", pulse_count);
+        UART_Transmit_Async(&g_uart2, (uint8_t *)buffer, strlen(buffer));
     }
 }
 

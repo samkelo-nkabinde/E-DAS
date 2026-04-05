@@ -26,8 +26,8 @@ uint32_t get_final_pulse_count(void)
 float compute_temperature(uint32_t final_pulse_count)
 {
 
-    float current_temperature = (((int32_t)final_pulse_count * 2560) / 4096) - 500;
-    return current_temperature / 100.0f;
+	float current_temperature = (((float)final_pulse_count * 2560.0f) / 4096.0f) - 500.0f;
+	return current_temperature / 100.0f;
 }
 
 bool temperature_is_high(void)
