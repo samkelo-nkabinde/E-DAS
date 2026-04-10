@@ -50,6 +50,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+
 I2C_HandleTypeDef hi2c1;
 
 RTC_HandleTypeDef hrtc;
@@ -71,6 +73,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_RTC_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 char buffer[50];
 
@@ -127,6 +130,7 @@ int main(void)
   MX_TIM1_Init();
   MX_RTC_Init();
   MX_I2C1_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   UART_System_Init(&g_uart2, &huart2);
   LED_on(&D2);
@@ -157,40 +161,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  if (keypad_event)
-	  {
-		  // Clear the event flag
-		  keypad_event = 0;
 
-		  // DO NOT disable interrupts here!
-		  char key = keypad_get_key();
-
-		  if (key != 0)
-		  {
-			  LED_toggle(&D2);
-
-			  sprintf(buffer, "Key: %c\r\n", key);
-			  UART_Transmit_Async(&g_uart2, (uint8_t *)buffer, strlen(buffer));
-		  }
-
-		  // Reset matrix so all rows are LOW, ready for the next FALLING edge interrupt
-		  keypad_reset();
-
-		  // Clear any bogus interrupts that fired during our scanning/debouncing
-		  keypad_clear();
-	  }
-	  static uint32_t last_temp_time = 0;
-	  if(HAL_GetTick() - last_temp_time >= 1000)
-	{
-
-		uint32_t captured_pulses = get_final_pulse_count();
-		float raw_temp = compute_temperature(captured_pulses);
-		average_temperature = kalman_update(&kf_temperature,raw_temp);
-		char temp[20];
-		sprintf(temp, "Temp: %.2f\n", average_temperature);
-		UART_Transmit_Async(&g_uart2, (uint8_t *)temp, strlen(temp));
-		last_temp_time = HAL_GetTick();
-	}
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -241,6 +212,58 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
 }
 
 /**
@@ -513,7 +536,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
