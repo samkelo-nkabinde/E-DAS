@@ -7,61 +7,82 @@
 
 #include "keypad.h"
 
-keypad_row row_pins[ROW_NUM] = {
-    {GPIOB, GPIO_PIN_1, 0, 0, 0},
-    {GPIOA, GPIO_PIN_12,0, 0, 0},
-    {GPIOA, GPIO_PIN_11,0, 0, 0},
-    {GPIOB, GPIO_PIN_2, 0, 0, 0}
+
+keypad_pin row_pins[ROW_NUM] = {
+    {GPIOB, GPIO_PIN_1},
+    {GPIOA, GPIO_PIN_12},
+    {GPIOA, GPIO_PIN_11},
+    {GPIOB, GPIO_PIN_2}
 };
 
-keypad_row col_pins[COL_NUM] = {
+
+keypad_pin col_pins[COL_NUM] = {
     {GPIOB, GPIO_PIN_13},
     {GPIOB, GPIO_PIN_14},
     {GPIOB, GPIO_PIN_15}
 };
 
-char keypad_map[ROW_NUM][COL_NUM] = {
+volatile uint8_t keypad_event = 0;
+
+
+uint8_t keypad_map[ROW_NUM][COL_NUM] = {
     {'1','2','3'},
     {'4','5','6'},
     {'7','8','9'},
     {'*','0','#'}
 };
 
-void keypad_init(void)
+void keypad_reset(void)
 {
-    for(int i=0; i<ROW_NUM; i++)
-        HAL_GPIO_WritePin(row_pins[i].Port, row_pins[i].Pin, GPIO_PIN_SET);
+    for(int i = 0; i < ROW_NUM; i++)
+        HAL_GPIO_WritePin(row_pins[i].Port, row_pins[i].Pin, GPIO_PIN_RESET);
+
+    return;
 }
 
-char keypad_get_key(void)
+uint8_t keypad_get_key(void)
 {
-    for(int r=0; r<ROW_NUM; r++)
+    char detected_key = 0;
+
+
+    HAL_Delay(30);
+
+
+    for(int r = 0; r < ROW_NUM; r++)
     {
-        for(int i=0; i<ROW_NUM; i++)
+
+        for(int i = 0; i < ROW_NUM; i++)
+        {
             HAL_GPIO_WritePin(row_pins[i].Port, row_pins[i].Pin, GPIO_PIN_SET);
+        }
+
 
         HAL_GPIO_WritePin(row_pins[r].Port, row_pins[r].Pin, GPIO_PIN_RESET);
 
-        for(int c=0; c<COL_NUM; c++)
+
+        for(volatile int d = 0; d < 1000; d++);
+
+
+        for(int c = 0; c < COL_NUM; c++)
         {
-            uint8_t reading = HAL_GPIO_ReadPin(col_pins[c].Port, col_pins[c].Pin);
-
-            if(reading != row_pins[r].last_reading)
-                row_pins[r].last_debounce = HAL_GetTick();
-
-            row_pins[r].last_reading = reading;
-
-            if((HAL_GetTick() - row_pins[r].last_debounce) > DEBOUNCE_MS)
+            if(HAL_GPIO_ReadPin(col_pins[c].Port, col_pins[c].Pin) == GPIO_PIN_RESET)
             {
-                if(reading != row_pins[r].last_state)
-                {
-                    row_pins[r].last_state = reading;
+                detected_key = keypad_map[r][c];
 
-                    if(reading == GPIO_PIN_RESET)
-                        return keypad_map[r][c];
-                }
+
+                while(HAL_GPIO_ReadPin(col_pins[c].Port, col_pins[c].Pin) == GPIO_PIN_RESET);
+
+                break;
             }
         }
+        if (detected_key) break;
     }
-    return 0;
+
+    return detected_key;
+}
+
+void keypad_clear(void)
+{
+	__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
+	return;
 }

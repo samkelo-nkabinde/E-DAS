@@ -30,6 +30,7 @@
 #include "temperature.h"
 #include "uart_handle.h"
 #include "kalman_filter.h"
+#include "keypad.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -70,6 +71,7 @@ static void MX_RTC_Init(void);
 static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 char buffer[50];
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -133,7 +135,7 @@ int main(void)
   const char *student_number = "*28118944#\n";
   while (HAL_GetTick() - start < 250);
   UART_Transmit_Async(&g_uart2, (uint8_t *)student_number, strlen(student_number));
-
+  keypad_reset();
   kalman_init(&kf_temperature, compute_temperature(get_final_pulse_count()));
 
   /* USER CODE END 2 */
@@ -143,56 +145,27 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  LED_blink_control(&D3);
-	  LED_blink_control(&D5);
-
-	  if (button_pressed(&S1))
-	  		  LED_toggle(&D2);
-
-	  if (button_pressed(&S4))
-	  		  LED_toggle(&D4);
-
-	  if (button_pressed(&S2))
+	  if (keypad_event)
 	  {
-		  D3.blink_enable = !D3.blink_enable;
+		  // Clear the event flag
+		  keypad_event = 0;
 
-		  if (!D3.blink_enable)
-			  LED_off(&D3);
-		  else
-			  D3.blink_timer = HAL_GetTick();
-	  }
+		  // DO NOT disable interrupts here!
+		  char key = keypad_get_key();
 
-	  if (button_pressed(&S5))
-	  {
-		  D4.blink_enable = !D4.blink_enable;
+		  if (key != 0)
+		  {
+			  LED_toggle(&D2);
 
-		  if (!D4.blink_enable)
-			  LED_off(&D4);
-		  else
-			  D4.blink_timer = HAL_GetTick();
-	  }
-	 static uint32_t last_temp_time = 0;
+			  sprintf(buffer, "Key: %c\r\n", key);
+			  UART_Transmit_Async(&g_uart2, (uint8_t *)buffer, strlen(buffer));
+		  }
 
-	if(HAL_GetTick() - last_temp_time >= 1000)
-	{
+		  // Reset matrix so all rows are LOW, ready for the next FALLING edge interrupt
+		  keypad_reset();
 
-		uint32_t captured_pulses = get_final_pulse_count();
-
-	    float raw_temp = compute_temperature(captured_pulses);
-
-	    average_temperature = kalman_update(&kf_temperature, raw_temp);
-
-//	    sprintf(buffer, "Temp: %.2f C (pulses=%lu)\r\n", average_temperature, captured_pulses);
-//	    UART_Transmit_Async(&g_uart2, (uint8_t *)buffer, strlen(buffer));
-
-		last_temp_time = HAL_GetTick();
-	  }
-
-	  if (button_pressed(&S3))
-	  {
-		  average_temperature = kalman_update(&kf_temperature, average_temperature);
-		  sprintf(buffer, "Temperature: %.2f C\r\n", average_temperature);
-		  UART_Transmit_Async(&g_uart2, (uint8_t *)buffer, 22);
+		  // Clear any bogus interrupts that fired during our scanning/debouncing
+		  keypad_clear();
 	  }
     /* USER CODE BEGIN 3 */
   }
@@ -426,10 +399,10 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA1_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 
 }
@@ -461,12 +434,6 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_D2_GPIO_Port, LED_D2_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC0 PC1 PC2 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2;
@@ -504,7 +471,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PB13 PB14 PB15 */
   GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -521,27 +488,36 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
 
-void EXTI9_5_IRQHandler(void)
-{
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
-}
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == GPIO_PIN_7)
     {
         pulse_count++;
-        sprintf(buffer, "Temp: 0 C (pulses=%lu)\r\n", pulse_count);
-        UART_Transmit_Async(&g_uart2, (uint8_t *)buffer, strlen(buffer));
     }
+
+    if (GPIO_Pin == GPIO_PIN_13 ||
+           GPIO_Pin == GPIO_PIN_14 ||
+           GPIO_Pin == GPIO_PIN_15)
+   {
+	   keypad_event = 1;
+   }
+
+   return;
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
