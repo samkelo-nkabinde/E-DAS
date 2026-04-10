@@ -141,12 +141,13 @@ int main(void)
   kalman_init(&kf_temperature, compute_temperature(get_final_pulse_count()));
 
   ssd1306_Init();
-
+  ssd1306_WriteCommand(0xA0);
+  ssd1306_WriteCommand(0xC0);
   ssd1306_Fill(Black);
 
   // Use a larger font (11x18)
   ssd1306_SetCursor(2, 0);
-  ssd1306_WriteString("BIG TEXT", Font_11x18, White);
+  ssd1306_WriteString("BIG TEXT!", Font_11x18, White);
 
   ssd1306_UpdateScreen();
   /* USER CODE END 2 */
@@ -178,6 +179,18 @@ int main(void)
 		  // Clear any bogus interrupts that fired during our scanning/debouncing
 		  keypad_clear();
 	  }
+	  static uint32_t last_temp_time = 0;
+	  if(HAL_GetTick() - last_temp_time >= 1000)
+	{
+
+		uint32_t captured_pulses = get_final_pulse_count();
+		float raw_temp = compute_temperature(captured_pulses);
+		average_temperature = kalman_update(&kf_temperature,raw_temp);
+		char temp[20];
+		sprintf(temp, "Temp: %.2f\n", average_temperature);
+		UART_Transmit_Async(&g_uart2, (uint8_t *)temp, strlen(temp));
+		last_temp_time = HAL_GetTick();
+	}
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
