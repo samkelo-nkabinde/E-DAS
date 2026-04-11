@@ -31,8 +31,7 @@
 #include "uart_handle.h"
 #include "kalman_filter.h"
 #include "keypad.h"
-#include "ssd1306.h"
-#include "ssd1306_fonts.h"
+#include "oled.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -76,7 +75,7 @@ static void MX_I2C1_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 char buffer[50];
-
+volatile uint32_t last_pulse_time = 0;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -147,6 +146,9 @@ int main(void)
   OLED_init();
   OLED_write("Testing...", 0, 0);
 
+  HAL_ADC_Start(&hadc1);
+
+  char msg[20];
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -154,7 +156,58 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+//	  if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)
+//	      {
+//	          uint32_t raw = HAL_ADC_GetValue(&hadc1);
+//	          float voltage = (raw * 3.3f) / 4095.0f;
+//
+//
+//	          OLED_write("PC3 DIODE TEST", 0, 0);
+//
+//	          // Raw Value
+//	          sprintf(msg, "ADC: %lu", raw);
+//	          OLED_write(msg, 0, 12);
+//
+//	          // Voltage
+//	          sprintf(msg, "%.3f V", voltage);
+//	          OLED_write(msg, 0, 22);
+//
+//	          ssd1306_UpdateScreen();
+//	      }
+//	      HAL_Delay(100);
 
+//	      static uint32_t last_temp_time = 0;
+//
+//	      	if(HAL_GetTick() - last_temp_time >= 1000)
+//	      	{
+//
+//	      		uint32_t captured_pulses = get_final_pulse_count();
+//
+//	      		float temp = compute_temperature(captured_pulses);
+//		          OLED_write("Temp TEST", 0, 0);
+//
+//		          // Raw Value
+//		          sprintf(msg, "Temp: %.2f", temp);
+//		          OLED_write(msg, 0, 12);
+//	      		last_temp_time = HAL_GetTick();
+//	      	}
+
+	      	static uint32_t last_read_time = 0;
+
+	      	if ((HAL_GetTick() - last_pulse_time) > 50) // no pulses for 50ms
+	      	{
+	      	    if ((HAL_GetTick() - last_read_time) > 100) // avoid spam
+	      	    {
+	      	        uint32_t count = get_final_pulse_count();
+	      	        float temp = compute_temperature(count);
+			          OLED_write("Temp TEST", 0, 0);
+
+			          // Raw Value
+			          sprintf(msg, "Temp: %.2f", temp);
+			          OLED_write(msg, 0, 12);
+	      	        last_read_time = HAL_GetTick();
+	      	    }
+	      	}
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -246,7 +299,7 @@ static void MX_ADC1_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Channel = ADC_CHANNEL_13;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -422,7 +475,7 @@ static void MX_USART2_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART2_Init 2 */
-	HAL_NVIC_SetPriority(USART2_IRQn, 1, 0);
+	HAL_NVIC_SetPriority(USART2_IRQn, 3, 0);
 	HAL_NVIC_EnableIRQ(USART2_IRQn);
   /* USER CODE END USART2_Init 2 */
 
@@ -439,10 +492,10 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA1_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 
 }
@@ -525,14 +578,14 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PB7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -548,6 +601,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (GPIO_Pin == GPIO_PIN_7)
     {
         pulse_count++;
+        last_pulse_time = HAL_GetTick();
     }
 
     if (GPIO_Pin == GPIO_PIN_13 ||
