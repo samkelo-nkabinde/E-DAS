@@ -156,58 +156,22 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-//	  if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)
-//	      {
-//	          uint32_t raw = HAL_ADC_GetValue(&hadc1);
-//	          float voltage = (raw * 3.3f) / 4095.0f;
-//
-//
-//	          OLED_write("PC3 DIODE TEST", 0, 0);
-//
-//	          // Raw Value
-//	          sprintf(msg, "ADC: %lu", raw);
-//	          OLED_write(msg, 0, 12);
-//
-//	          // Voltage
-//	          sprintf(msg, "%.3f V", voltage);
-//	          OLED_write(msg, 0, 22);
-//
-//	          ssd1306_UpdateScreen();
-//	      }
-//	      HAL_Delay(100);
+    	static uint32_t last_read_time = 0;
 
-//	      static uint32_t last_temp_time = 0;
-//
-//	      	if(HAL_GetTick() - last_temp_time >= 1000)
-//	      	{
-//
-//	      		uint32_t captured_pulses = get_final_pulse_count();
-//
-//	      		float temp = compute_temperature(captured_pulses);
-//		          OLED_write("Temp TEST", 0, 0);
-//
-//		          // Raw Value
-//		          sprintf(msg, "Temp: %.2f", temp);
-//		          OLED_write(msg, 0, 12);
-//	      		last_temp_time = HAL_GetTick();
-//	      	}
+    	if ((HAL_GetTick() - last_pulse_time) > 50) // no pulses for 50ms
+    	{
+    	    if ((HAL_GetTick() - last_read_time) > 100) // avoid spam
+    	    {
+    	        uint32_t count = get_final_pulse_count();
+    	        float temp = compute_temperature(count);
+		          OLED_write("Temp TEST", 0, 0);
 
-	      	static uint32_t last_read_time = 0;
-
-	      	if ((HAL_GetTick() - last_pulse_time) > 50) // no pulses for 50ms
-	      	{
-	      	    if ((HAL_GetTick() - last_read_time) > 100) // avoid spam
-	      	    {
-	      	        uint32_t count = get_final_pulse_count();
-	      	        float temp = compute_temperature(count);
-			          OLED_write("Temp TEST", 0, 0);
-
-			          // Raw Value
-			          sprintf(msg, "Temp: %.2f", temp);
-			          OLED_write(msg, 0, 12);
-	      	        last_read_time = HAL_GetTick();
-	      	    }
-	      	}
+		          // Raw Value
+		          sprintf(msg, "Temp: %.2f", temp);
+		          OLED_write(msg, 0, 12);
+    	        last_read_time = HAL_GetTick();
+    	    }
+    	}
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -492,10 +456,10 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA1_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 
 }
@@ -577,7 +541,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PB7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -585,7 +549,7 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */

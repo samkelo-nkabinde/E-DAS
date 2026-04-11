@@ -29,23 +29,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY
  12 .debug_info   00016706  00000000  00000000  0000c224  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 0000370a  00000000  00000000  0002292a  2**0
+ 13 .debug_abbrev 00003723  00000000  00000000  0002292a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 000014f0  00000000  00000000  00026038  2**3
+ 14 .debug_aranges 000014f0  00000000  00000000  00026050  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_rnglists 00001055  00000000  00000000  00027528  2**0
+ 15 .debug_rnglists 00001055  00000000  00000000  00027540  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  000084ce  00000000  00000000  0002857d  2**0
+ 16 .debug_macro  000084ce  00000000  00000000  00028595  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0001ba15  00000000  00000000  00030a4b  2**0
+ 17 .debug_line   0001ba15  00000000  00000000  00030a63  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    000a5dc3  00000000  00000000  0004c460  2**0
+ 18 .debug_str    000a5dc3  00000000  00000000  0004c478  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  000f2223  2**0
+ 19 .comment      00000043  00000000  00000000  000f223b  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000068a8  00000000  00000000  000f2268  2**2
+ 20 .debug_frame  000068a8  00000000  00000000  000f2280  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 0000006c  00000000  00000000  000f8b10  2**0
+ 21 .debug_line_str 0000006c  00000000  00000000  000f8b28  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -1502,12 +1502,12 @@ int main(void)
   HAL_ADC_Start(&hadc1);
  80010ba:	482a      	ldr	r0, [pc, #168]	@ (8001164 <main+0x1d4>)
  80010bc:	f001 fb66 	bl	800278c <HAL_ADC_Start>
-//	      		last_temp_time = HAL_GetTick();
-//	      	}
+  while (1)
+  {
+    /* USER CODE END WHILE */
+    	static uint32_t last_read_time = 0;
 
-	      	static uint32_t last_read_time = 0;
-
-	      	if ((HAL_GetTick() - last_pulse_time) > 50) // no pulses for 50ms
+    	if ((HAL_GetTick() - last_pulse_time) > 50) // no pulses for 50ms
  80010c0:	f001 faf0 	bl	80026a4 <HAL_GetTick>
  80010c4:	4602      	mov	r2, r0
  80010c6:	4b28      	ldr	r3, [pc, #160]	@ (8001168 <main+0x1d8>)
@@ -1515,8 +1515,8 @@ int main(void)
  80010ca:	1ad3      	subs	r3, r2, r3
  80010cc:	2b32      	cmp	r3, #50	@ 0x32
  80010ce:	d9f7      	bls.n	80010c0 <main+0x130>
-	      	{
-	      	    if ((HAL_GetTick() - last_read_time) > 100) // avoid spam
+    	{
+    	    if ((HAL_GetTick() - last_read_time) > 100) // avoid spam
  80010d0:	f001 fae8 	bl	80026a4 <HAL_GetTick>
  80010d4:	4602      	mov	r2, r0
  80010d6:	4b25      	ldr	r3, [pc, #148]	@ (800116c <main+0x1dc>)
@@ -1524,22 +1524,22 @@ int main(void)
  80010da:	1ad3      	subs	r3, r2, r3
  80010dc:	2b64      	cmp	r3, #100	@ 0x64
  80010de:	d9ef      	bls.n	80010c0 <main+0x130>
-	      	    {
-	      	        uint32_t count = get_final_pulse_count();
+    	    {
+    	        uint32_t count = get_final_pulse_count();
  80010e0:	f001 f8e0 	bl	80022a4 <get_final_pulse_count>
  80010e4:	f8c7 009c 	str.w	r0, [r7, #156]	@ 0x9c
-	      	        float temp = compute_temperature(count);
+    	        float temp = compute_temperature(count);
  80010e8:	f8d7 009c 	ldr.w	r0, [r7, #156]	@ 0x9c
  80010ec:	f001 f8f0 	bl	80022d0 <compute_temperature>
  80010f0:	ed87 0a26 	vstr	s0, [r7, #152]	@ 0x98
-			          OLED_write("Temp TEST", 0, 0);
+		          OLED_write("Temp TEST", 0, 0);
  80010f4:	2200      	movs	r2, #0
  80010f6:	2100      	movs	r1, #0
  80010f8:	481d      	ldr	r0, [pc, #116]	@ (8001170 <main+0x1e0>)
  80010fa:	f000 fb6f 	bl	80017dc <OLED_write>
 
-			          // Raw Value
-			          sprintf(msg, "Temp: %.2f", temp);
+		          // Raw Value
+		          sprintf(msg, "Temp: %.2f", temp);
  80010fe:	f8d7 0098 	ldr.w	r0, [r7, #152]	@ 0x98
  8001102:	f7ff fa29 	bl	8000558 <__aeabi_f2d>
  8001106:	4602      	mov	r2, r0
@@ -1547,13 +1547,13 @@ int main(void)
  800110a:	1d38      	adds	r0, r7, #4
  800110c:	4919      	ldr	r1, [pc, #100]	@ (8001174 <main+0x1e4>)
  800110e:	f006 fcfd 	bl	8007b0c <siprintf>
-			          OLED_write(msg, 0, 12);
+		          OLED_write(msg, 0, 12);
  8001112:	1d3b      	adds	r3, r7, #4
  8001114:	220c      	movs	r2, #12
  8001116:	2100      	movs	r1, #0
  8001118:	4618      	mov	r0, r3
  800111a:	f000 fb5f 	bl	80017dc <OLED_write>
-	      	        last_read_time = HAL_GetTick();
+    	        last_read_time = HAL_GetTick();
  800111e:	f001 fac1 	bl	80026a4 <HAL_GetTick>
  8001122:	4603      	mov	r3, r0
  8001124:	4a11      	ldr	r2, [pc, #68]	@ (800116c <main+0x1dc>)
@@ -2259,18 +2259,18 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
  800152e:	2200      	movs	r2, #0
- 8001530:	2102      	movs	r1, #2
+ 8001530:	2100      	movs	r1, #0
  8001532:	2010      	movs	r0, #16
  8001534:	f001 fe1f 	bl	8003176 <HAL_NVIC_SetPriority>
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
  8001538:	2010      	movs	r0, #16
  800153a:	f001 fe38 	bl	80031ae <HAL_NVIC_EnableIRQ>
   /* DMA1_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
  800153e:	2200      	movs	r2, #0
- 8001540:	2102      	movs	r1, #2
+ 8001540:	2100      	movs	r1, #0
  8001542:	2011      	movs	r0, #17
  8001544:	f001 fe17 	bl	8003176 <HAL_NVIC_SetPriority>
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
@@ -2510,8 +2510,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = GPIO_PIN_7;
  80016bc:	2380      	movs	r3, #128	@ 0x80
  80016be:	617b      	str	r3, [r7, #20]
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
- 80016c0:	f44f 1388 	mov.w	r3, #1114112	@ 0x110000
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+ 80016c0:	f44f 1344 	mov.w	r3, #3211264	@ 0x310000
  80016c4:	61bb      	str	r3, [r7, #24]
   GPIO_InitStruct.Pull = GPIO_NOPULL;
  80016c6:	2300      	movs	r3, #0
@@ -2532,9 +2532,9 @@ static void MX_GPIO_Init(void)
  80016e0:	2017      	movs	r0, #23
  80016e2:	f001 fd64 	bl	80031ae <HAL_NVIC_EnableIRQ>
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
  80016e6:	2200      	movs	r2, #0
- 80016e8:	2101      	movs	r1, #1
+ 80016e8:	2100      	movs	r1, #0
  80016ea:	2028      	movs	r0, #40	@ 0x28
  80016ec:	f001 fd43 	bl	8003176 <HAL_NVIC_SetPriority>
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
