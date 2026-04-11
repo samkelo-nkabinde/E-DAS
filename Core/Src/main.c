@@ -144,16 +144,9 @@ int main(void)
   keypad_reset();
   kalman_init(&kf_temperature, compute_temperature(get_final_pulse_count()));
 
-  ssd1306_Init();
-  ssd1306_WriteCommand(0xA0);
-  ssd1306_WriteCommand(0xC0);
-  ssd1306_Fill(Black);
+  OLED_init();
+  OLED_write("Testing...", 0, 0);
 
-  // Use a larger font (11x18)
-  ssd1306_SetCursor(2, 0);
-  ssd1306_WriteString("BIG TEXT!", Font_11x18, White);
-
-  ssd1306_UpdateScreen();
   /* USER CODE END 2 */
 
   /* Infinite loop */
