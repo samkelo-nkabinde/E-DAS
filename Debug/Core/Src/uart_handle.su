@@ -1,5 +1,5 @@
-../Core/Src/uart_handle.c:12:6:UART_System_Init	16	static
-../Core/Src/uart_handle.c:25:6:UART_Transmit_Async	40	static
+../Core/Src/uart_handle.c:12:6:UART_init	16	static
+../Core/Src/uart_handle.c:25:6:UART_transmit	40	static
 ../Core/Src/uart_handle.c:60:6:HAL_UART_TxCpltCallback	24	static
-../Core/Src/uart_handle.c:88:6:UART_Get_Command	40	static
+../Core/Src/uart_handle.c:88:6:UART_getcommand	40	static
 ../Core/Src/uart_handle.c:133:6:UART_Irq_Handler	24	static

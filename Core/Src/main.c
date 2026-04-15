@@ -131,7 +131,12 @@ int main(void)
   MX_I2C1_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  UART_System_Init(&g_uart2, &huart2);
+  HAL_ADC_Start(&hadc1);
+  UART_init(&g_uart2, &huart2);
+  OLED_init();
+  keypad_init();
+  temperature_init();
+
   LED_on(&D2);
   LED_on(&D3);
   LED_on(&D4);
@@ -139,14 +144,9 @@ int main(void)
 
   const char *student_number = "*28118944#\n";
   while (HAL_GetTick() - start < 250);
-  UART_Transmit_Async(&g_uart2, (uint8_t *)student_number, strlen(student_number));
-  keypad_reset();
-  kalman_init(&kf_temperature, compute_temperature(get_final_pulse_count()));
+  UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
 
-  OLED_init();
-  OLED_write("Testing...", 0, 0);
-
-  HAL_ADC_Start(&hadc1);
+  kalman_init(&kf_temperature, temperature.raw);
 
   char msg[20];
   /* USER CODE END 2 */
@@ -156,7 +156,18 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+	  if(get_pulse_count());
+	  {
+		  compute_temperature();
+		  temperature.filtered = kalman_update(&kf_temperature, temperature.raw);
+	  }
 
+	  if(button_pressed(&S1))
+	  {
+		  sprintf(msg, "Temp: %.2f", temperature.filtered);
+		  OLED_write(msg, 0, 0);
+
+	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -531,7 +542,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
@@ -550,7 +561,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (GPIO_Pin == GPIO_PIN_7)
     {
         pulse_count++;
-        last_pulse_time = HAL_GetTick();
     }
 
     if (GPIO_Pin == GPIO_PIN_13 ||

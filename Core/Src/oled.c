@@ -10,9 +10,11 @@
 void OLED_init()
 {
 	  ssd1306_Init();
+
 	  ssd1306_WriteCommand(0xA0);
 	  ssd1306_WriteCommand(0xC0);
-	  ssd1306_Fill(Black);
+
+	  OLED_clear();
 
 	  return;
 }

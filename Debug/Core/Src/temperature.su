@@ -1,3 +1,4 @@
-../Core/Src/temperature.c:14:10:get_final_pulse_count	16	static,ignoring_inline_asm
-../Core/Src/temperature.c:26:7:compute_temperature	24	static
-../Core/Src/temperature.c:33:6:temperature_is_high	4	static
+../Core/Src/temperature.c:13:6:temperature_init	8	static
+../Core/Src/temperature.c:21:6:get_pulse_count	24	static,ignoring_inline_asm
+../Core/Src/temperature.c:53:6:compute_temperature	4	static
+../Core/Src/temperature.c:60:6:temperature_is_high	4	static

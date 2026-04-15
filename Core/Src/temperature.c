@@ -8,29 +8,56 @@
 #include "temperature.h"
 
 volatile uint32_t pulse_count = 0;
+temperature_t temperature;
 
-float average_temperature = 25.0f;
-
-uint32_t get_final_pulse_count(void)
+void temperature_init()
 {
-    uint32_t final_pulse_count;
+	temperature.last_time = HAL_GetTick();
+	temperature.pulse_count = pulse_count;
+	temperature.raw = 25.0f;
+	temperature.filtered = temperature.raw;
+}
 
+bool get_pulse_count(void)
+{
     __disable_irq();
-    final_pulse_count = pulse_count;
     pulse_count = 0;
     __enable_irq();
 
-    return final_pulse_count;
+    uint32_t start_time = HAL_GetTick();
+
+
+    while(pulse_count == 0)
+    {
+        if(HAL_GetTick() - start_time > 160) return false;
+    }
+
+
+    uint32_t last_count = 0;
+    uint32_t timer = HAL_GetTick();
+
+    while(HAL_GetTick() - timer < 10)
+    {
+        if(pulse_count != last_count)
+        {
+        	last_count = pulse_count;
+            timer = HAL_GetTick();
+        }
+
+    }
+
+    temperature.pulse_count = pulse_count;
+    return true;
 }
 
-float compute_temperature(uint32_t final_pulse_count)
+void compute_temperature(void)
 {
-
-	float current_temperature = (((float)final_pulse_count * 2560.0f) / 4096.0f) - 500.0f;
-	return current_temperature / 100.0f;
+	if(temperature.pulse_count > 1000)
+		temperature.raw = ((temperature.pulse_count / 4096.0f) * 256.0f - 50.0f);
+	return;
 }
 
 bool temperature_is_high(void)
 {
-    return average_temperature > 30;
+    return temperature.filtered > 30;
 }

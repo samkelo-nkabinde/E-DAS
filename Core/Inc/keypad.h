@@ -27,6 +27,7 @@ extern keypad_pin col_pins[COL_NUM];
 extern uint8_t keypad_map[ROW_NUM][COL_NUM];
 extern volatile uint8_t keypad_event;
 
+void keypad_init(void);
 void keypad_reset(void);
 uint8_t keypad_get_key(void);
 void keypad_clear(void);

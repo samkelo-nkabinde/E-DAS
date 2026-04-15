@@ -66,8 +66,7 @@ void update_stat(Stat_type_e stat)
 			break;
 
 		case TEMPERATURE:
-			float temp_c = average_temperature / 100.0f;
-			snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%.1f C\n", "Temperature:", temp_c);
+			snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%.1f C\n", "Temperature:", 100.0);
 			break;
 
 		case HIGH_TEMPERATURE:

@@ -32,6 +32,11 @@ uint8_t keypad_map[ROW_NUM][COL_NUM] = {
     {'*','0','#'}
 };
 
+void keypad_init(void)
+{
+	keypad_reset();
+}
+
 void keypad_reset(void)
 {
     for(int i = 0; i < ROW_NUM; i++)

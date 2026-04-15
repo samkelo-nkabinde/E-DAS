@@ -16,11 +16,20 @@
 #include <stdbool.h>
 
 extern volatile uint32_t pulse_count;
-extern volatile uint32_t last_pulse_tick;
-extern float average_temperature;
 
-uint32_t get_final_pulse_count(void);
-float compute_temperature(uint32_t final_pulse_count);
+typedef struct
+{
+	float raw;
+	uint32_t last_time;
+	uint32_t pulse_count;
+	float filtered;
+}temperature_t;
+
+extern temperature_t temperature;
+
+void temperature_init();
+bool get_pulse_count(void);
+void compute_temperature(void);
 bool temperature_is_high(void);
 
 #endif /* INC_TEMPERATURE_H_ */

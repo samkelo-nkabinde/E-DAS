@@ -1,3 +1,4 @@
-../Core/Src/keypad.c:35:6:keypad_reset	16	static
-../Core/Src/keypad.c:43:9:keypad_get_key	32	static
-../Core/Src/keypad.c:84:6:keypad_clear	4	static
+../Core/Src/keypad.c:35:6:keypad_init	8	static
+../Core/Src/keypad.c:40:6:keypad_reset	16	static
+../Core/Src/keypad.c:48:9:keypad_get_key	32	static
+../Core/Src/keypad.c:89:6:keypad_clear	4	static
