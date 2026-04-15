@@ -156,22 +156,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    	static uint32_t last_read_time = 0;
 
-    	if ((HAL_GetTick() - last_pulse_time) > 50) // no pulses for 50ms
-    	{
-    	    if ((HAL_GetTick() - last_read_time) > 100) // avoid spam
-    	    {
-    	        uint32_t count = get_final_pulse_count();
-    	        float temp = compute_temperature(count);
-		          OLED_write("Temp TEST", 0, 0);
-
-		          // Raw Value
-		          sprintf(msg, "Temp: %.2f", temp);
-		          OLED_write(msg, 0, 12);
-    	        last_read_time = HAL_GetTick();
-    	    }
-    	}
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -541,7 +526,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PB7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
