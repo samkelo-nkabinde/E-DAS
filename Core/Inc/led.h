@@ -20,6 +20,12 @@ typedef struct
     uint32_t blink_timer;    // last toggle time
 } LED_t;
 
+extern LED_t D2;
+extern LED_t D3;
+extern LED_t D4;
+extern LED_t D5;
+
+void LED_init(void);
 void LED_on(LED_t *led);
 void LED_off(LED_t *led);
 void LED_toggle(LED_t *led);

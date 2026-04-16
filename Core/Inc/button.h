@@ -20,5 +20,13 @@ typedef struct
     uint8_t last_reading;
 } Button_t;
 
+extern Button_t S1;
+extern Button_t S2;
+extern Button_t S3;
+extern Button_t S4;
+extern Button_t S5;
+
+void button_init(void);
 uint8_t button_pressed(Button_t *button);
+
 #endif /* INC_BUTTON_H_ */

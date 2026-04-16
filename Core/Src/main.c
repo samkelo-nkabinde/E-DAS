@@ -101,17 +101,7 @@ int main(void)
   /* USER CODE BEGIN Init */
   uint32_t start = HAL_GetTick();
 
-  LED_t D2 = {GPIOC, LED_D2_Pin, 1, 1, 0};
-  LED_t D3 = {GPIOA, LED_D3_Pin, 1, 1, 0};
-  LED_t D4 = {GPIOA, LED_D4_Pin, 1, 1, 0};
-  LED_t D5 = {GPIOA, LED_D5_Pin, 1, 1, 0};
-
-  Button_t S1 = {GPIOC, GPIO_PIN_1, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-  Button_t S2 = {GPIOC, GPIO_PIN_2, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-  Button_t S3 = {GPIOC, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-  Button_t S4 = {GPIOB, GPIO_PIN_6, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-  Button_t S5 = {GPIOB, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-
+  static kalman_filter_t kf_distance;
   static kalman_filter_t kf_temperature;
   /* USER CODE END Init */
 
@@ -133,21 +123,26 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_ADC_Start(&hadc1);
   UART_init(&g_uart2, &huart2);
-  OLED_init();
   keypad_init();
+  button_init();
+  LED_init();
   temperature_init();
+  kalman_init(&kf_temperature, temperature.raw);
 
   LED_on(&D2);
   LED_on(&D3);
   LED_on(&D4);
   LED_on(&D5);
 
+  uint32_t end = HAL_GetTick();
+  char time[30];
+  sprintf(time, "Time: %d\n", end - start);
+  UART_transmit(&g_uart2, (uint8_t *)time, strlen(time));
   const char *student_number = "*28118944#\n";
   while (HAL_GetTick() - start < 250);
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
 
-  kalman_init(&kf_temperature, temperature.raw);
-
+  OLED_init();
   char msg[20];
   /* USER CODE END 2 */
 
@@ -156,18 +151,16 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  if(get_pulse_count());
+	  if(get_pulse_count())
 	  {
 		  compute_temperature();
 		  temperature.filtered = kalman_update(&kf_temperature, temperature.raw);
 	  }
 
-	  if(button_pressed(&S1))
-	  {
-		  sprintf(msg, "Temp: %.2f", temperature.filtered);
-		  OLED_write(msg, 0, 0);
+	  OLED_write("Samkelo", 0, 0);
+	  OLED_write("Nkabinde", 0, 12);
+	  OLED_write("28118944", 0, 22);
 
-	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

@@ -31,11 +31,8 @@ void update_date_stat(void)
 
 void stats_init(void)
 {
-    // Line 1: 21 characters + \n = 22 total
-    snprintf(stat_data[DATE], 22+1, "%-21s\n", "@YYYY/MM/DD HH:MM:SS");
 
-    // All following lines: 20 characters + \n = 21 total
-    // We use SIZE (22) which allows up to 21 chars + \0 terminator
+    snprintf(stat_data[DATE], 22+1, "%-21s\n", "@YYYY/MM/DD HH:MM:SS");
     snprintf(stat_data[DISTANCE], SIZE, "%-9s%6ld.%ld cm\n", "Distance:", (int32_t)(0), (int32_t)(0));
     snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%4ld.%ld C\n", "Temperature:", (int32_t)(0), (int32_t)(0));
     snprintf(stat_data[LIGHT], SIZE, "%-6s%9s lux\n", "Light:", "0000");
