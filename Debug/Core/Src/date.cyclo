@@ -2,4 +2,4 @@
 ../Core/Src/date.c:21:6:date_init	1
 ../Core/Src/date.c:32:6:date_set	12
 ../Core/Src/date.c:74:6:date_update	1
-../Core/Src/date.c:89:6:date_format	1
+../Core/Src/date.c:89:6:date_format	2

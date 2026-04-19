@@ -30,6 +30,7 @@
 #include "keypad.h"
 #include "oled.h"
 #include "uart_system.h"
+#include "menu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -151,6 +152,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+	  display_diagnostics_page();
 	  uart_system_update();
     /* USER CODE BEGIN 3 */
   }

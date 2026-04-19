@@ -33,6 +33,6 @@ void date_init(void);
 void date_set(uint32_t year, uint32_t month, uint32_t day,
               uint32_t hours, uint32_t mins, uint32_t seconds);
 void date_update(Date_t *date);
-void date_format(Date_t *date, char *buf, size_t buf_size);
+void date_format(Date_t *date, char *buf, size_t buf_size, uint8_t type);
 
 #endif /* INC_DATE_H_ */

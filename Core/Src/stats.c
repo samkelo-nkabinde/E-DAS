@@ -38,7 +38,7 @@ void stats_transmit_one(Stat_type_e stat)
     switch (stat) {
         case STAT_DATE:
             date_update(&system_date);
-            date_format(&system_date, line, sizeof(line));
+            date_format(&system_date, line, sizeof(line), 0);
             size_t len = strlen(line);
 			line[len] = '\n';
 			line[len + 1] = '\0';

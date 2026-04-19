@@ -1,5 +1,6 @@
-Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
- ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
+Core/Src/menu.o: ../Core/Src/menu.c ../Core/Inc/menu.h ../Core/Inc/oled.h \
+ ../Core/Inc/ssd1306.h ../Core/Inc/ssd1306_conf_template.h \
+ ../Core/Inc/main.h ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h \
@@ -34,14 +35,13 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/led.h ../Core/Inc/main.h ../Core/Inc/button.h \
- ../Core/Inc/keypad.h ../Core/Inc/oled.h ../Core/Inc/ssd1306.h \
- ../Core/Inc/ssd1306_conf_template.h ../Core/Inc/ssd1306_fonts.h \
- ../Core/Inc/uart_system.h ../Core/Inc/uart_handle.h \
- ../Core/Inc/command.h ../Core/Inc/date.h ../Core/Inc/stats.h \
- ../Core/Inc/temperature.h ../Core/Inc/kalman_filter.h \
- ../Core/Inc/distance.h ../Core/Inc/light.h ../Core/Inc/fuel.h \
- ../Core/Inc/menu.h ../Core/Inc/oled.h
+ ../Core/Inc/ssd1306_fonts.h ../Core/Inc/temperature.h \
+ ../Core/Inc/kalman_filter.h ../Core/Inc/distance.h ../Core/Inc/light.h \
+ ../Core/Inc/fuel.h ../Core/Inc/date.h
+../Core/Inc/menu.h:
+../Core/Inc/oled.h:
+../Core/Inc/ssd1306.h:
+../Core/Inc/ssd1306_conf_template.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -78,23 +78,10 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
-../Core/Inc/led.h:
-../Core/Inc/main.h:
-../Core/Inc/button.h:
-../Core/Inc/keypad.h:
-../Core/Inc/oled.h:
-../Core/Inc/ssd1306.h:
-../Core/Inc/ssd1306_conf_template.h:
 ../Core/Inc/ssd1306_fonts.h:
-../Core/Inc/uart_system.h:
-../Core/Inc/uart_handle.h:
-../Core/Inc/command.h:
-../Core/Inc/date.h:
-../Core/Inc/stats.h:
 ../Core/Inc/temperature.h:
 ../Core/Inc/kalman_filter.h:
 ../Core/Inc/distance.h:
 ../Core/Inc/light.h:
 ../Core/Inc/fuel.h:
-../Core/Inc/menu.h:
-../Core/Inc/oled.h:
+../Core/Inc/date.h:

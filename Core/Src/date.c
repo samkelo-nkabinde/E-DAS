@@ -86,8 +86,14 @@ void date_update(Date_t *date)
     date->seconds = sTime.Seconds;
 }
 
-void date_format(Date_t *date, char *buf, size_t buf_size)
+void date_format(Date_t *date, char *buf, size_t buf_size, uint8_t type)
 {
+	if(type == 1)
+	{
+		sprintf(buf, "=%04lu/%02lu/%02lu %02lu:%02lu=",
+					date->year, date->month, date->day, date->hours, date->mins);
+		return;
+	}
     snprintf(buf, buf_size, "%04lu/%02lu/%02lu %02lu:%02lu:%02lu",
              date->year,
              date->month,
