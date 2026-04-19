@@ -20,6 +20,16 @@ typedef struct
     uint8_t last_reading;
 } Button_t;
 
+typedef enum
+{
+	NO_BUTTON = -1,
+	BUTTON_1,
+	BUTTON_2,
+	BUTTON_3,
+	BUTTON_4,
+	BUTTON_5
+}ButtonType;
+
 extern Button_t S1;
 extern Button_t S2;
 extern Button_t S3;
@@ -28,5 +38,5 @@ extern Button_t S5;
 
 void button_init(void);
 uint8_t button_pressed(Button_t *button);
-
+ButtonType get_button_pressed(void);
 #endif /* INC_BUTTON_H_ */

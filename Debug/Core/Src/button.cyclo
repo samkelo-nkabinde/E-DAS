@@ -1,2 +1,3 @@
 ../Core/Src/button.c:16:6:button_init	1
 ../Core/Src/button.c:26:9:button_pressed	5
+../Core/Src/button.c:53:12:get_button_pressed	6

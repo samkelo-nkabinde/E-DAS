@@ -14,10 +14,10 @@ LED_t D5;
 
 void LED_init(void)
 {
-	LED_t D2 = {GPIOC, LED_D2_Pin, 1, 1, 0};
-	LED_t D3 = {GPIOA, LED_D3_Pin, 1, 1, 0};
-	LED_t D4 = {GPIOA, LED_D4_Pin, 1, 1, 0};
-	LED_t D5 = {GPIOA, LED_D5_Pin, 1, 1, 0};
+	D2 = (LED_t){GPIOC, LED_D2_Pin, 1, 1, 0};
+	D3 = (LED_t){GPIOA, LED_D3_Pin, 1, 1, 0};
+	D4 = (LED_t){GPIOA, LED_D4_Pin, 1, 1, 0};
+	D5 = (LED_t){GPIOA, LED_D5_Pin, 1, 1, 0};
 
 	return;
 }

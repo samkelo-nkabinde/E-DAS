@@ -12,18 +12,23 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
 #include <stdbool.h>
 
 #include "kalman_filter.h"
 
+typedef struct
+{
+	float raw;
+	float filtered;
+	bool warning;
+}distance_t;
 
-extern float average_distance;
+extern distance_t distance;
+extern bool dist_warning;
 
+void distance_init(void);
 uint32_t get_pulse_width(void);
 float compute_distance(uint32_t pulse_width);
-bool proximity_warning(void);
+void update_distance(void);
 
 #endif /* INC_DISTANCE_H_ */

@@ -7,92 +7,99 @@
 
 #include "stats.h"
 
-char stat_data[NUMBER_OF_STATS][SIZE];
-
-volatile uint8_t stats_requested = 0;
-bool alarm_checking = false;
-
-void update_date_stat(void)
+static void stat_line(char out[22],
+                      const char *label,
+                      const char *val_fmt, ...)
 {
-    RTC_DateTypeDef sDate;
-    RTC_TimeTypeDef sTime;
+    char val[32];
+    va_list args;
+    va_start(args, val_fmt);
+    vsnprintf(val, sizeof(val), val_fmt, args);
+    va_end(args);
 
-    if(HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-        Error_Handler();
+    int llen = (int)strlen(label);
+    int vlen = (int)strlen(val);
+    int pad  = 20 - llen - vlen;
+    if (pad < 0) pad = 0;
 
-    if(HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
-        Error_Handler();
+    int pos = 0;
+    for (int i = 0; i < llen && pos < 20; i++) out[pos++] = label[i];
+    for (int i = 0; i < pad  && pos < 20; i++) out[pos++] = ' ';
+    for (int i = 0; i < vlen && pos < 20; i++) out[pos++] = val[i];
 
-    snprintf(stat_data[DATE], SIZE + 1, "@%04d/%02d/%02d %02d:%02d:%02d\n",
-             2000 + sDate.Year, sDate.Month, sDate.Date,
-             sTime.Hours, sTime.Minutes, sTime.Seconds);
+    out[20] = '\n';
+    out[21] = '\0';
 }
 
-
-void stats_init(void)
+void stats_transmit_one(Stat_type_e stat)
 {
+    char line[22];
 
-    snprintf(stat_data[DATE], 22+1, "%-21s\n", "@YYYY/MM/DD HH:MM:SS");
-    snprintf(stat_data[DISTANCE], SIZE, "%-9s%6ld.%ld cm\n", "Distance:", (int32_t)(0), (int32_t)(0));
-    snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%4ld.%ld C\n", "Temperature:", (int32_t)(0), (int32_t)(0));
-    snprintf(stat_data[LIGHT], SIZE, "%-6s%9s lux\n", "Light:", "0000");
-    snprintf(stat_data[X_ACCELARATION], SIZE, "%-8s%9s g\n", "X accel:", "0.00");
-    snprintf(stat_data[Y_ACCELARATION], SIZE, "%-8s%9s g\n", "Y accel:", "0.00");
-    snprintf(stat_data[Z_ACCELARATION], SIZE, "%-8s%9s g\n", "Z accel:", "0.00");
-    snprintf(stat_data[UNSAFE_DRIVING], SIZE, "%-15s%5ld\n", "Unsafe driving:", (int32_t)(0));
-    snprintf(stat_data[IMPACT_DETECTED], SIZE, "%-17s%3ld\n", "Impact detected:", (int32_t)(0));
-    snprintf(stat_data[LOW_LIGHT_WARNING], SIZE, "%-18s%2ld\n", "Low-Light warning:", (int32_t)(0));
-    snprintf(stat_data[PROXIMITY_WARNING], SIZE, "%-18s%2ld\n", "Proximity warning:", (int32_t)(0));
-    snprintf(stat_data[HIGH_TEMPERATURE], SIZE, "%-17s%3ld\n", "High Temperature:", (int32_t)(0));
-    snprintf(stat_data[GPS_LATITUDE], SIZE, "%-8s%12s\n", "GPS lat:", "000.00000");
-    snprintf(stat_data[GPS_LONGITUDE], SIZE, "%-9s%11s\n", "GPS long:", "000.00000");
+    switch (stat) {
+        case STAT_DATE:
+            date_update(&system_date);
+            date_format(&system_date, line, sizeof(line));
+            size_t len = strlen(line);
+			line[len] = '\n';
+			line[len + 1] = '\0';
+            break;
+        case STAT_DISTANCE:
+        	//update_distance();
+            stat_line(line, "Distance:", "%04.1f cm", distance.raw);
+            break;
+        case STAT_TEMPERATURE:
+        	update_temperature();
+            stat_line(line, "Temperature:", "%+05.1f C", temperature.filtered);
+            break;
+        case STAT_LIGHT:
+            stat_line(line, "Light:", "%04.0f lux", 0.0f);
+            break;
+        case STAT_X_ACCEL:
+            stat_line(line, "X accel:", "%+5.2f g", 0.0f);
+            break;
+        case STAT_Y_ACCEL:
+            stat_line(line, "Y accel:", "%+5.2f g", 0.0f);
+            break;
+        case STAT_Z_ACCEL:
+            stat_line(line, "Z accel:", "%+5.2f g", 0.0f);
+            break;
+        case STAT_UNSAFE_DRIVING:
+            stat_line(line, "Unsafe driving:", "%d", (int)0);
+            break;
+        case STAT_IMPACT_DETECTED:
+            stat_line(line, "Impact detected:", "%d", (int)0);
+            break;
+        case STAT_LOW_LIGHT_WARNING:
+            stat_line(line, "Low-Light warning:", "%d", (int)0);
+            break;
+        case STAT_PROXIMITY_WARNING:
+        	//update_distance();
+            stat_line(line, "Proximity warning:", "%d", (int)distance.warning);
+            break;
+        case STAT_HIGH_TEMPERATURE:
+        	update_temperature();
+            stat_line(line, "High Temperature:", "%d", (int)temperature.warning);
+            break;
+        case STAT_GPS_LAT:
+            stat_line(line, "GPSLat:", "%+09.6f", 0);
+            break;
+        case STAT_GPS_LONG:
+            stat_line(line, "GPSLong:", "%+010.6f", 0);
+            break;
+        default:
+            return;
+    }
 
-    return;
+    UART_transmit(&g_uart2, (uint8_t *)line, strlen(line));
 }
 
-void update_stat(Stat_type_e stat)
+void stats_transmit_all()
 {
-	switch(stat)
-	{
-		case DATE:
-			break;
+	UART_transmit(&g_uart2, (uint8_t *)"@", 1);
 
-		case DISTANCE:
-			float distance_cm = average_distance / 1.0f;
-			snprintf(stat_data[DISTANCE], SIZE, "%-9s%.1f cm\n", "Distance:", distance_cm);
-			break;
+    for (Stat_type_e s = STAT_DATE; s < STAT_COUNT; s++)
+        stats_transmit_one(s);
 
-		case TEMPERATURE:
-			snprintf(stat_data[TEMPERATURE], SIZE, "%-12s%.1f C\n", "Temperature:", 100.0);
-			break;
-
-		case HIGH_TEMPERATURE:
-			snprintf(stat_data[HIGH_TEMPERATURE], SIZE, "%-17s%3ld\n", "High Temperature:",
-					(int32_t)(temperature_is_high()));
-			break;
-
-		case PROXIMITY_WARNING:
-			snprintf(stat_data[PROXIMITY_WARNING], SIZE, "%-18s%2ld\n", "Proximity warning:",
-					(int32_t)(proximity_warning()));
-			break;
-
-		default:
-			break;
-	}
-
-	return;
+    UART_transmit(&g_uart2, (uint8_t *)"&\n", 2);
 }
 
-void transimit_stat(Stat_type_e stat)
-{
-	HAL_UART_Transmit(&huart2, (uint8_t*)stat_data[stat], strlen(stat_data[stat]), 100);
-	return;
-}
-
-void transimit_all_stats(void)
-{
-	for(uint8_t i = 0; i < NUMBER_OF_STATS; i++)
-		transimit_stat(i);
-
-	return;
-}

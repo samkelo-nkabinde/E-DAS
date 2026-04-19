@@ -15,11 +15,11 @@ Button_t S5;
 
 void button_init(void)
 {
-	Button_t S1 = {GPIOC, GPIO_PIN_1, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-	Button_t S2 = {GPIOC, GPIO_PIN_2, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-	Button_t S3 = {GPIOC, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-	Button_t S4 = {GPIOB, GPIO_PIN_6, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
-	Button_t S5 = {GPIOB, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+	S1 = (Button_t){GPIOC, GPIO_PIN_1, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+	S2 = (Button_t){GPIOC, GPIO_PIN_2, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+	S3 = (Button_t){GPIOC, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+	S4 = (Button_t){GPIOB, GPIO_PIN_6, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
+	S5 = (Button_t){GPIOB, GPIO_PIN_0, 0, GPIO_PIN_RESET, GPIO_PIN_RESET};
 	return;
 }
 
@@ -48,4 +48,15 @@ uint8_t button_pressed(Button_t *button)
     }
 
     return 0;
+}
+
+ButtonType get_button_pressed(void)
+{
+	if(button_pressed(&S1)) return BUTTON_1;
+	if(button_pressed(&S2)) return BUTTON_2;
+	if(button_pressed(&S3)) return BUTTON_3;
+	if(button_pressed(&S4)) return BUTTON_4;
+	if(button_pressed(&S5)) return BUTTON_5;
+
+	return NO_BUTTON;
 }

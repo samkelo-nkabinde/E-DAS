@@ -27,11 +27,9 @@
 
 #include "led.h"
 #include "button.h"
-#include "temperature.h"
-#include "uart_handle.h"
-#include "kalman_filter.h"
 #include "keypad.h"
 #include "oled.h"
+#include "uart_system.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,8 +99,6 @@ int main(void)
   /* USER CODE BEGIN Init */
   uint32_t start = HAL_GetTick();
 
-  static kalman_filter_t kf_distance;
-  static kalman_filter_t kf_temperature;
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -127,7 +123,7 @@ int main(void)
   button_init();
   LED_init();
   temperature_init();
-  kalman_init(&kf_temperature, temperature.raw);
+  date_init();
 
   LED_on(&D2);
   LED_on(&D3);
@@ -143,7 +139,10 @@ int main(void)
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
 
   OLED_init();
-  char msg[20];
+  char command[64];
+
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -151,16 +150,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  if(get_pulse_count())
-	  {
-		  compute_temperature();
-		  temperature.filtered = kalman_update(&kf_temperature, temperature.raw);
-	  }
-
-	  OLED_write("Samkelo", 0, 0);
-	  OLED_write("Nkabinde", 0, 12);
-	  OLED_write("28118944", 0, 22);
-
+	  uart_system_update();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

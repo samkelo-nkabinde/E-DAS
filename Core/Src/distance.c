@@ -7,9 +7,18 @@
 
 #include "distance.h"
 
-kalman_filter_t kf_distance;
-float average_distance = 0;
+distance_t distance;
+bool dist_warning = 0;
+static kalman_filter_t kf_distance;
 
+void distance_init(void)
+{
+	distance.raw = 100.04f;
+	distance.filtered = distance.raw;
+	distance.warning = dist_warning ? dist_warning : distance.filtered < 10.0;
+	kalman_init(&kf_distance, distance.raw);
+	return;
+}
 
 uint32_t get_pulse_width()
 {
@@ -40,8 +49,11 @@ float compute_distance(uint32_t pulse_width)
 	return (float)(pulse_width / 58);
 }
 
-bool proximity_warning(void)
+void update_distance(void)
 {
-	return (average_distance <= 10.0f);
+	distance.raw = compute_distance(get_pulse_width());
+	distance.filtered = kalman_update(&kf_distance, distance.raw);
+	distance.warning = dist_warning ? dist_warning : distance.filtered < 10.0;
 }
+
 

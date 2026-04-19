@@ -24,6 +24,6 @@ typedef enum
 	SETRST_COMMAND
 }command_e;
 
-command_e get_command(char *command);
+command_e command_type(char *command);
 
 #endif /* INC_COMMAND_H_ */

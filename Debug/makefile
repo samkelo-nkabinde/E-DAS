@@ -61,7 +61,7 @@ main-build: E-Design-Project.elf secondary-outputs
 
 # Tool invocations
 E-Design-Project.elf E-Design-Project.map: $(OBJS) $(USER_OBJS) C:\Users\samke\STM32CubeIDE\workspace_1.19.0\E-Design-Project\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "E-Design-Project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\samke\STM32CubeIDE\workspace_1.19.0\E-Design-Project\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="E-Design-Project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "E-Design-Project.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\samke\STM32CubeIDE\workspace_1.19.0\E-Design-Project\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="E-Design-Project.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

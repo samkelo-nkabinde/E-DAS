@@ -7,8 +7,10 @@
 
 #include "temperature.h"
 
+ bool temp_warning = 0;
 volatile uint32_t pulse_count = 0;
 temperature_t temperature;
+static kalman_filter_t kf_temperature;
 
 void temperature_init()
 {
@@ -16,6 +18,10 @@ void temperature_init()
 	temperature.pulse_count = pulse_count;
 	temperature.raw = 25.0f;
 	temperature.filtered = temperature.raw;
+	temperature.warning = temp_warning ? temp_warning : temperature.filtered >= 30.0f;
+	kalman_init(&kf_temperature, temperature.raw);
+
+	return;
 }
 
 bool get_pulse_count(void)
@@ -57,7 +63,11 @@ void compute_temperature(void)
 	return;
 }
 
-bool temperature_is_high(void)
+void update_temperature(void)
 {
-    return temperature.filtered > 30;
+	get_pulse_count();
+	compute_temperature();
+	temperature.filtered = kalman_update(&kf_temperature, temperature.raw);
+	temperature.warning = temp_warning ? temp_warning : temperature.filtered >= 30.0f;
 }
+

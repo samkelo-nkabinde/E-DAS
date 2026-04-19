@@ -12,38 +12,34 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+
+#include "uart_handle.h"
 #include "temperature.h"
 #include "distance.h"
+#include "date.h"
 
-#define SIZE 22
-#define NUMBER_OF_STATS 14
-
-extern bool alarm_checking;
-extern volatile uint8_t stats_requested;
 typedef enum
 {
-	DATE = 0,
-	DISTANCE,
-	TEMPERATURE,
-	LIGHT,
-	X_ACCELARATION,
-	Y_ACCELARATION,
-	Z_ACCELARATION,
-	UNSAFE_DRIVING,
-	IMPACT_DETECTED,
-	LOW_LIGHT_WARNING,
-	PROXIMITY_WARNING,
-	HIGH_TEMPERATURE,
-	GPS_LATITUDE,
-	GPS_LONGITUDE
+    STAT_DATE = 0,
+    STAT_DISTANCE,
+    STAT_TEMPERATURE,
+    STAT_LIGHT,
+    STAT_X_ACCEL,
+    STAT_Y_ACCEL,
+    STAT_Z_ACCEL,
+    STAT_UNSAFE_DRIVING,
+    STAT_IMPACT_DETECTED,
+    STAT_LOW_LIGHT_WARNING,
+    STAT_PROXIMITY_WARNING,
+    STAT_HIGH_TEMPERATURE,
+    STAT_GPS_LAT,
+    STAT_GPS_LONG,
+    STAT_COUNT
+} Stat_type_e;
 
-}Stat_type_e;
+void stats_transmit_one(Stat_type_e stat);
+void stats_transmit_all();
 
-extern char stat_data[NUMBER_OF_STATS][SIZE];
-
-void stats_init(void);
-void update_stat(Stat_type_e stat);
-void transimit_stat(Stat_type_e stat);
-void transimit_all_stats(void);
-void update_date_stat(void);
 #endif /* INC_STATS_H_ */

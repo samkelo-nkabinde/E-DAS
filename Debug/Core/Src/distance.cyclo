@@ -1,3 +1,4 @@
-../Core/Src/distance.c:14:10:get_pulse_width	6
-../Core/Src/distance.c:38:7:compute_distance	1
-../Core/Src/distance.c:43:6:proximity_warning	1
+../Core/Src/distance.c:14:6:distance_init	2
+../Core/Src/distance.c:23:10:get_pulse_width	6
+../Core/Src/distance.c:47:7:compute_distance	1
+../Core/Src/distance.c:52:6:update_distance	2
