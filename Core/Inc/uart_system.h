@@ -17,6 +17,7 @@
 #include "distance.h"
 #include "temperature.h"
 #include "fuel.h"
+#include "light.h"
 
 void uart_system_update(void);
 void update_warning(uint32_t c, uint32_t y);

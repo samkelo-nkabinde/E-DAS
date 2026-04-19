@@ -16,7 +16,7 @@
 
 #include "kalman_filter.h"
 
-extern bool temp_warning;
+extern bool temperature_external_warning;
 extern volatile uint32_t pulse_count;
 
 typedef struct

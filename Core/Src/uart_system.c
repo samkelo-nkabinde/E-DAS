@@ -83,13 +83,13 @@ void update_warning(uint32_t c, uint32_t y)
 
 			break;
 		case 3:
-
+			light_external_warning = y;
 			break;
 		case 4:
-			dist_warning = y;
+			distance_external_warning = y;
 			break;
 		case 5:
-			temp_warning = y;
+			temperature_external_warning = y;
 			break;
 		default:
 			break;

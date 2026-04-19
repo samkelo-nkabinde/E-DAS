@@ -1,4 +1,4 @@
-../Core/Src/distance.c:14:6:distance_init	2
-../Core/Src/distance.c:23:10:get_pulse_width	6
-../Core/Src/distance.c:47:7:compute_distance	1
-../Core/Src/distance.c:52:6:update_distance	2
+../Core/Src/distance.c:17:6:distance_init	2
+../Core/Src/distance.c:26:17:get_pulse_width	6
+../Core/Src/distance.c:50:14:compute_distance	1
+../Core/Src/distance.c:55:6:update_distance	2

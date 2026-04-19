@@ -76,7 +76,7 @@ void Error_Handler(void);
 extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim1;
 extern RTC_HandleTypeDef hrtc;
-
+extern ADC_HandleTypeDef hadc1;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

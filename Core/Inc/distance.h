@@ -24,11 +24,9 @@ typedef struct
 }distance_t;
 
 extern distance_t distance;
-extern bool dist_warning;
+extern bool distance_external_warning;
 
 void distance_init(void);
-uint32_t get_pulse_width(void);
-float compute_distance(uint32_t pulse_width);
 void update_distance(void);
 
 #endif /* INC_DISTANCE_H_ */
