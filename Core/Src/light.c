@@ -26,11 +26,14 @@ void light_init()
 
 void light_update()
 {
-	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	light.raw = (uint16_t)HAL_ADC_GetValue(&hadc1);
-	light.voltage = (VREF * light.raw) / ADC_MAX;
-	light.filtered = kalman_update(&kf_light, light.voltage);
-	light.lux = light.filtered * CALIBRATION_CONSTANT;
-	light.warning = light_external_warning ? light_external_warning : light.lux <= 300;
+	HAL_ADC_Start(&hadc1);
+    if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK)
+    {
+        light.raw = (uint16_t)HAL_ADC_GetValue(&hadc1);
+        light.voltage = (VREF * light.raw) / ADC_MAX;
+        light.filtered = kalman_update(&kf_light, light.voltage);
+        light.lux = light.filtered * CALIBRATION_CONSTANT;
+    }
+    light.warning = light_external_warning ? light_external_warning : light.lux < 300;
 }
 

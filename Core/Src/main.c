@@ -117,13 +117,14 @@ int main(void)
   MX_I2C1_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start(&hadc1);
   UART_init(&g_uart2, &huart2);
   keypad_init();
   button_init();
   LED_init();
   temperature_init();
   date_init();
+  distance_init();
+  light_init();
 
   LED_on(&D2);
   LED_on(&D3);
@@ -132,7 +133,7 @@ int main(void)
 
   uint32_t end = HAL_GetTick();
   char time[30];
-  sprintf(time, "Time: %d\n", end - start);
+  sprintf(time, "Time: %ul\n", end - start);
   UART_transmit(&g_uart2, (uint8_t *)time, strlen(time));
   const char *student_number = "*28118944#\n";
   while (HAL_GetTick() - start < 250);

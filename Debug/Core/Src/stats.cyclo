@@ -1,3 +1,3 @@
 ../Core/Src/stats.c:10:13:stat_line	8
 ../Core/Src/stats.c:34:6:stats_transmit_one	15
-../Core/Src/stats.c:96:6:stats_transmit_all	2
+../Core/Src/stats.c:98:6:stats_transmit_all	2

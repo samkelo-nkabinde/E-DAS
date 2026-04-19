@@ -20,6 +20,7 @@ void distance_init(void)
 	distance.filtered = distance.raw;
 	distance.warning = distance_external_warning ? distance_external_warning : distance.filtered < 10.0;
 	kalman_init(&kf_distance, distance.raw);
+	HAL_TIM_Base_Start(&htim1);
 	return;
 }
 

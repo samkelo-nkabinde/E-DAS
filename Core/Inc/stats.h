@@ -19,6 +19,7 @@
 #include "temperature.h"
 #include "distance.h"
 #include "date.h"
+#include "light.h"
 
 typedef enum
 {

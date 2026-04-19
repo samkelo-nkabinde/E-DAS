@@ -44,15 +44,16 @@ void stats_transmit_one(Stat_type_e stat)
 			line[len + 1] = '\0';
             break;
         case STAT_DISTANCE:
-        	//update_distance();
-            stat_line(line, "Distance:", "%04.1f cm", distance.raw);
+        	update_distance();
+            stat_line(line, "Distance:", "%04.1f cm", distance.filtered);
             break;
         case STAT_TEMPERATURE:
         	update_temperature();
             stat_line(line, "Temperature:", "%+05.1f C", temperature.filtered);
             break;
         case STAT_LIGHT:
-            stat_line(line, "Light:", "%04.0f lux", 0.0f);
+        	light_update();
+            stat_line(line, "Light:", "%4d lux", (int)light.lux);
             break;
         case STAT_X_ACCEL:
             stat_line(line, "X accel:", "%+5.2f g", 0.0f);
@@ -70,10 +71,11 @@ void stats_transmit_one(Stat_type_e stat)
             stat_line(line, "Impact detected:", "%d", (int)0);
             break;
         case STAT_LOW_LIGHT_WARNING:
-            stat_line(line, "Low-Light warning:", "%d", (int)0);
+        	light_update();
+            stat_line(line, "Low-Light warning:", "%d", (int)light.warning);
             break;
         case STAT_PROXIMITY_WARNING:
-        	//update_distance();
+        	update_distance();
             stat_line(line, "Proximity warning:", "%d", (int)distance.warning);
             break;
         case STAT_HIGH_TEMPERATURE:

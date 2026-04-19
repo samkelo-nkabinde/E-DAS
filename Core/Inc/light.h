@@ -16,7 +16,7 @@
 
 #define VREF        3.3f
 #define ADC_MAX     4095.0f
-#define CALIBRATION_CONSTANT 600.0f;
+#define CALIBRATION_CONSTANT 800.0f;
 
 typedef struct
 {
