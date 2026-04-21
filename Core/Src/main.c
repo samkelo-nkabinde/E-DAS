@@ -31,6 +31,7 @@
 #include "oled.h"
 #include "uart_system.h"
 #include "menu.h"
+#include "state_machine.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -152,8 +153,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  display_diagnostics_page();
 	  uart_system_update();
+	  state_machine();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

@@ -23,11 +23,13 @@
 void display_default_page(void);
 void display_entry_page(void);
 void display_diagnostics_page(void);
+
 void display_1_1(void);
 void display_1_2(void);
 void display_1_3(void);
 void display_1_4(void);
 void display_1_5(void);
+
 void display_2_1(uint8_t editing);
 void display_2_2(uint8_t editing);
 void display_2_3(uint8_t logging_enabled);

@@ -16,5 +16,5 @@
 void OLED_init();
 void OLED_write(char *string, int32_t x_pos, int32_t y_pos);
 void OLED_clear();
-
+void OLED_update(void);
 #endif /* INC_OLED_H_ */

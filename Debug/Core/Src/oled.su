@@ -1,3 +1,4 @@
 ../Core/Src/oled.c:10:6:OLED_init	8	static
-../Core/Src/oled.c:22:6:OLED_write	32	static
-../Core/Src/oled.c:32:6:OLED_clear	8	static
+../Core/Src/oled.c:19:6:OLED_write	32	static
+../Core/Src/oled.c:25:6:OLED_clear	8	static
+../Core/Src/oled.c:30:6:OLED_update	8	static

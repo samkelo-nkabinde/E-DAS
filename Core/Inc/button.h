@@ -23,11 +23,11 @@ typedef struct
 typedef enum
 {
 	NO_BUTTON = -1,
-	BUTTON_1,
-	BUTTON_2,
-	BUTTON_3,
-	BUTTON_4,
-	BUTTON_5
+	BUTTON_UP,
+	BUTTON_LEFT,
+	BUTTON_CENTER,
+	BUTTON_RIGHT,
+	BUTTON_DOWN
 }ButtonType;
 
 extern Button_t S1;

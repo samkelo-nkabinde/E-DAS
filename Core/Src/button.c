@@ -52,11 +52,11 @@ uint8_t button_pressed(Button_t *button)
 
 ButtonType get_button_pressed(void)
 {
-	if(button_pressed(&S1)) return BUTTON_1;
-	if(button_pressed(&S2)) return BUTTON_2;
-	if(button_pressed(&S3)) return BUTTON_3;
-	if(button_pressed(&S4)) return BUTTON_4;
-	if(button_pressed(&S5)) return BUTTON_5;
+	if(button_pressed(&S1)) return BUTTON_UP;
+	if(button_pressed(&S2)) return BUTTON_LEFT;
+	if(button_pressed(&S3)) return BUTTON_CENTER;
+	if(button_pressed(&S4)) return BUTTON_RIGHT;
+	if(button_pressed(&S5)) return BUTTON_DOWN;
 
 	return NO_BUTTON;
 }
