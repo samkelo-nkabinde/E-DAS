@@ -30,8 +30,8 @@ void display_1_3(void);
 void display_1_4(void);
 void display_1_5(void);
 
-void display_2_1(uint8_t editing);
-void display_2_2(uint8_t editing);
+void display_2_1(uint8_t editing, uint32_t preview);
+void display_2_2(uint8_t editing, uint32_t preview);
 void display_2_3(uint8_t logging_enabled);
 void display_3_1(uint8_t sd_ok);
 void display_3_2(uint8_t mpu_ok);

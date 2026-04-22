@@ -34,7 +34,7 @@ uint8_t button_pressed(Button_t *button)
 
     button->last_reading = reading;
 
-    if ((HAL_GetTick() - button->last_debounce) > 50)
+    if ((HAL_GetTick() - button->last_debounce) > 30)
     {
         if (reading != button->last_state)
         {

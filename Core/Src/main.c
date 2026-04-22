@@ -74,8 +74,6 @@ static void MX_RTC_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
-char buffer[50];
-volatile uint32_t last_pulse_time = 0;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -142,7 +140,6 @@ int main(void)
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
 
   OLED_init();
-  char command[64];
 
 
 
@@ -248,7 +245,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_13;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();

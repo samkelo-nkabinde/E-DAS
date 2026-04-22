@@ -144,11 +144,14 @@ void display_1_5(void)
 }
 
 
-void display_2_1(uint8_t editing)
+void display_2_1(uint8_t editing, uint32_t preview)
 {
 	OLED_clear();
     char line2[20];
-    format_line(line2, "Current:", "%.1f L", last_liters);
+    if (editing)
+    	format_line(line2, "Current:", "%d L", (int)preview);
+    else
+    	format_line(line2, "Current:", "%.1f L", last_liters);
     OLED_write("Enter fuel liters", 0, 0);
     OLED_write(line2, 0, 12);
     OLED_write(editing ? "Press S3 to accept"
@@ -156,11 +159,14 @@ void display_2_1(uint8_t editing)
     OLED_update();
 }
 
-void display_2_2(uint8_t editing)
+void display_2_2(uint8_t editing, uint32_t preview)
 {
 	OLED_clear();
     char line2[20];
-    format_line(line2, "Current:", "%.1f km", last_distance);
+    if (editing)
+    	format_line(line2, "Current:", "%d km", (int)preview);
+    else
+    	format_line(line2, "Current:", "%.1f km", last_distance);
     OLED_write("Enter odometer km", 0, 0);
     OLED_write(line2, 0, 12);
     OLED_write(editing ? "Press S3 to accept"

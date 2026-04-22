@@ -18,7 +18,7 @@ void distance_init(void)
 {
 	distance.raw = 100.04f;
 	distance.filtered = distance.raw;
-	distance.warning = distance_external_warning ? distance_external_warning : distance.filtered < 10.0;
+	distance.warning = distance_external_warning || ( distance.filtered < 10.0);
 	kalman_init(&kf_distance, distance.raw);
 	HAL_TIM_Base_Start(&htim1);
 	return;
@@ -57,7 +57,7 @@ void update_distance(void)
 {
 	distance.raw = compute_distance(get_pulse_width());
 	distance.filtered = kalman_update(&kf_distance, distance.raw);
-	distance.warning = distance_external_warning ? distance_external_warning : distance.filtered < 10.0;
+	distance.warning = distance_external_warning || (distance.filtered < 10.0);
 }
 
 

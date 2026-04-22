@@ -20,6 +20,7 @@
 #include "temperature.h"
 #include "distance.h"
 #include "date.h"
+#include "led.h"
 
 typedef enum {
     STATE_TOP_MENU,
@@ -44,7 +45,7 @@ typedef enum {
 } measurements_page_e;
 
 typedef enum {
-    PAGE_2_1 = 1,
+    PAGE_2_1,
     PAGE_2_2,
     PAGE_2_3
 } entry_page_e;
@@ -56,11 +57,6 @@ typedef enum {
     PAGE_3_4
 } diagnostics_page_e;
 
-extern state_e current_state;
-extern top_menu_e current_top_menu;
-extern measurements_page_e m_page;
-extern entry_page_e e_page;
-extern diagnostics_page_e d_page;
 
 void state_machine(void);
 

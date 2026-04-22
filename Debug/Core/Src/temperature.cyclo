@@ -1,4 +1,4 @@
-../Core/Src/temperature.c:15:6:temperature_init	2
+../Core/Src/temperature.c:15:6:temperature_init	3
 ../Core/Src/temperature.c:27:6:get_pulse_count	5
 ../Core/Src/temperature.c:59:6:compute_temperature	2
-../Core/Src/temperature.c:66:6:update_temperature	2
+../Core/Src/temperature.c:66:6:update_temperature	3

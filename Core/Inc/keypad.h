@@ -32,4 +32,13 @@ void keypad_reset(void);
 uint8_t keypad_get_key(void);
 void keypad_clear(void);
 
+typedef struct
+{
+    uint32_t current;
+    uint32_t last;
+    uint8_t active;
+} keypad_num_t;
+
+void keypad_number_update(keypad_num_t *k);
+void keypad_number_commit(keypad_num_t *k);
 #endif /* INC_KEYPAD_H_ */

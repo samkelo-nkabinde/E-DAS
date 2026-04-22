@@ -7,7 +7,6 @@
 
 #include "keypad.h"
 
-
 keypad_pin row_pins[ROW_NUM] = {
     {GPIOB, GPIO_PIN_1},
     {GPIOA, GPIO_PIN_12},
@@ -31,6 +30,7 @@ uint8_t keypad_map[ROW_NUM][COL_NUM] = {
     {'7','8','9'},
     {'*','0','#'}
 };
+
 
 void keypad_init(void)
 {
@@ -90,4 +90,30 @@ void keypad_clear(void)
 {
 	__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
 	return;
+}
+
+void keypad_number_update(keypad_num_t *k)
+{
+    uint8_t key = keypad_get_key();
+
+    if (key == 0)
+        return;
+
+    if (key >= '0' && key <= '9')
+    {
+        if (!k->active)
+        {
+            k->current = 0;
+            k->active = 1;
+        }
+
+        k->current = (k->current * 10) + (key - '0');
+    }
+}
+
+void keypad_number_commit(keypad_num_t *k)
+{
+    k->last = k->current;
+    k->current = 0;
+    k->active = 0;
 }

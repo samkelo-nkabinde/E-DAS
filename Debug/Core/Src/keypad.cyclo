@@ -2,3 +2,5 @@
 ../Core/Src/keypad.c:40:6:keypad_reset	2
 ../Core/Src/keypad.c:48:9:keypad_get_key	8
 ../Core/Src/keypad.c:89:6:keypad_clear	1
+../Core/Src/keypad.c:95:6:keypad_number_update	5
+../Core/Src/keypad.c:114:6:keypad_number_commit	1
