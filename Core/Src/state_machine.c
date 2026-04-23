@@ -36,20 +36,33 @@ void state_machine(void)
 	update_temperature();
 	compute_fuel_efficiency();
 
-	if (current_state == STATE_WARNING && distance.warning)
+	static uint8_t light_counter = 0;
+	light_counter++;
+	if (light_counter >= 6)
+	{
+		light_update();
+		light_counter = 0;
+	}
+
+	if (current_state == STATE_WARNING)
 	{
 	    if (distance.filtered > 30)
 	    {
 	        distance.warning = 0;
 
-	        current_state = prev_state;
-	        current_top_menu = prev_top_menu;
-	        m_page = prev_m_page;
-	        e_page = prev_e_page;
-	        d_page = prev_d_page;
+	        if (!unsafe_driving && !impact_detected && !light.warning && !temperature.warning)
+	        {
+	        	distance_external_warning = 0;
 
-	        last_button = NO_BUTTON;
-	        return;
+	            current_state = prev_state;
+	            current_top_menu = prev_top_menu;
+	            m_page = prev_m_page;
+	            e_page = prev_e_page;
+	            d_page = prev_d_page;
+
+	            last_button = NO_BUTTON;
+	            LED_off(&D2);
+	        }
 	    }
 	}
 
@@ -213,6 +226,10 @@ void state_machine(void)
 
             if (button == BUTTON_CENTER && last_button != BUTTON_CENTER)
             {
+            	distance_external_warning = 0;
+            	light_external_warning = 0;
+            	temperature_external_warning = 0;
+
                 unsafe_driving = 0;
                 impact_detected = 0;
                 light.warning = 0;
@@ -226,6 +243,8 @@ void state_machine(void)
                 e_page = prev_e_page;
                 d_page = prev_d_page;
 
+                LED_off(&D5);
+                LED_off(&D4);
                 button = NO_BUTTON;
             }
             break;

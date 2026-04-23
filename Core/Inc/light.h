@@ -8,15 +8,17 @@
 #ifndef INC_LIGHT_H_
 #define INC_LIGHT_H_
 
+
 #include "main.h"
 
 #include <stdbool.h>
+#include <math.h>
 
 #include "kalman_filter.h"
 
 #define VREF        3.3f
 #define ADC_MAX     4095.0f
-#define CALIBRATION_CONSTANT 900.0f;
+#define CALIBRATION_CONSTANT 1000.0f;
 
 typedef struct
 {

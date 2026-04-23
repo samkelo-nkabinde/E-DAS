@@ -126,11 +126,6 @@ int main(void)
   distance_init();
   light_init();
 
-  LED_on(&D2);
-  LED_on(&D3);
-  LED_on(&D4);
-  LED_on(&D5);
-
   uint32_t end = HAL_GetTick();
   char time[30];
   sprintf(time, "Time: %ul\n", end - start);
@@ -150,7 +145,6 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  uart_system_update();
 	  state_machine();
     /* USER CODE BEGIN 3 */
   }
@@ -245,7 +239,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_13;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -526,7 +520,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
