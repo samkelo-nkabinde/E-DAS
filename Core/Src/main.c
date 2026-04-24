@@ -126,10 +126,6 @@ int main(void)
   distance_init();
   light_init();
 
-  uint32_t end = HAL_GetTick();
-  char time[30];
-  sprintf(time, "Time: %ul\n", end - start);
-  UART_transmit(&g_uart2, (uint8_t *)time, strlen(time));
   const char *student_number = "*28118944#\n";
   while (HAL_GetTick() - start < 250);
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
@@ -146,6 +142,7 @@ int main(void)
   {
     /* USER CODE END WHILE */
 	  state_machine();
+	  uart_system_update();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -239,7 +236,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_13;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();

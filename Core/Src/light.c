@@ -24,42 +24,36 @@ void light_init()
 	HAL_ADC_Start(&hadc1);
 }
 
-void light_update(void)
-{
-    /* Start ADC */
-    if (HAL_ADC_Start(&hadc1) != HAL_OK)
-        return;
 
-    /* Wait for conversion */
+void light_update()
+{
+    // 1. Wake up the ADC and ask it for exactly ONE reading
+    HAL_ADC_Start(&hadc1);
+
+    // 2. Wait up to 10ms for that single reading to finish
     if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)
     {
-        /* Read raw ADC */
         light.raw = (uint16_t)HAL_ADC_GetValue(&hadc1);
 
-        /* Convert to voltage */
-        light.voltage = (VREF * (float)light.raw) / (float)ADC_MAX;
+        // Filter the raw integer signal directly (cast to float for Kalman)
+        float raw_filtered = kalman_update(&kf_light, (float)light.raw);
 
-        /* Filter */
-        light.filtered = kalman_update(&kf_light, light.voltage);
+        // Calculate voltage if you still need it for telemetry/other logic
+        light.voltage = (VREF * raw_filtered) / ADC_MAX;
 
-        /* Convert voltage -> lux (calibrated) */
-        light.lux = (250.0f * light.filtered) + 365.0f;
+        // --- NEW CALIBRATED MATH ---
+        // Maps Raw 216 -> 300 Lux | Raw 822 -> 400 Lux
+        light.lux = (0.165f * raw_filtered) + 264.36f;
 
-        /* Optional clamp (prevents nonsense values) */
+        // Prevent negative Lux values in very dark rooms
         if (light.lux < 0.0f)
+        {
             light.lux = 0.0f;
-    }
-    else
-    {
-        /* ADC failed → keep last valid values */
-        return;
+        }
     }
 
-    /* Stop ADC */
+    // 3. Cleanly shut down the ADC
     HAL_ADC_Stop(&hadc1);
 
-    /* Warning logic based on requirements */
-    light.warning = light_external_warning ||
-                    (light.lux >= 400.0f) ||   // too bright
-                    (light.lux <= 300.0f);     // too dim
+    light.warning = light_external_warning || (light.lux < 300); // Note: lux < 0 will always be false here due to the check above
 }
