@@ -116,7 +116,7 @@ void state_machine(void)
     {
         locked = 0;
     }
-
+    if(light.warning == 0) LED_off(&D4);
     switch (current_state)
     {
         case STATE_TOP_MENU:
@@ -247,6 +247,8 @@ void state_machine(void)
                 LED_off(&D4);
                 button = NO_BUTTON;
             }
+
+
             break;
     }
 
