@@ -8,6 +8,8 @@
 #ifndef INC_MP6050_H_
 #define INC_MP6050_H_
 
+#include <stdint.h>
+
 #define MPU6050_OK     0
 #define MPU6050_ERROR  1
 
@@ -37,6 +39,7 @@ typedef struct
     float cz;
 } MPU6050_Calibration;
 
+uint8_t MPU6050_ReadWhoAmI(uint8_t *who);
 uint8_t MPU6050_Init(void);
 uint8_t MPU6050_ReadAccel(MPU6050_AccelData *data);
 uint8_t MPU6050_ReadTemperature(float *temp_c);

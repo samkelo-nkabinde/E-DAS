@@ -5,6 +5,8 @@
  *      Author: Samkelo Nkabinde
  */
 
+#include "main.h"
+#include "mp6050.h"
 
 #define MPU6050_SCL_PORT GPIOA
 #define MPU6050_SCL_PIN  GPIO_PIN_8
@@ -28,6 +30,8 @@
  * The MPU-6050 register map gives 16384 LSB/g for this setting.
  */
 #define ACCEL_LSB_PER_G  16384.0f
+
+
 
 static MPU6050_Calibration accel_cal =
 {
@@ -403,4 +407,13 @@ MPU6050_Calibration MPU6050_CalculateAxisCalibration(
     cal.cx = c;
 
     return cal;
+}
+uint8_t MPU6050_ReadWhoAmI(uint8_t *who)
+{
+    if (who == 0)
+    {
+        return MPU6050_ERROR;
+    }
+
+    return MPU6050_ReadRegs(REG_WHO_AM_I, who, 1);
 }

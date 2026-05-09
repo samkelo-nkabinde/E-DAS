@@ -32,6 +32,7 @@
 #include "uart_system.h"
 #include "menu.h"
 #include "state_machine.h"
+#include "mp6050.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -126,6 +127,12 @@ int main(void)
   distance_init();
   light_init();
 
+  MPU6050_AccelData mpu_accel;
+  float mpu_temp = 0.0f;
+
+  uint32_t last_mpu_time = 0;
+  char mpu_msg[160];
+
   const char *student_number = "*28118944#\n";
   while (HAL_GetTick() - start < 250);
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
@@ -133,7 +140,17 @@ int main(void)
   OLED_init();
   MPU6050_Init();
 
+  char msg[100];
 
+  snprintf(
+      msg,
+      sizeof(msg),
+      "IDLE SCL:%d SDA:%d\r\n",
+      HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_8),
+      HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9)
+  );
+
+  UART_transmit(&g_uart2, (uint8_t *)msg, strlen(msg));
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -143,6 +160,35 @@ int main(void)
     /* USER CODE END WHILE */
 	  uart_system_update();
 	  state_machine();
+	  if( 1 == 4) //(HAL_GetTick() - last_mpu_time >= 100)
+	  {
+	      last_mpu_time = HAL_GetTick();
+
+	      if (MPU6050_ReadAccel(&mpu_accel) == MPU6050_OK)
+	      {
+	          int len = snprintf(
+	              mpu_msg,
+	              sizeof(mpu_msg),
+	              "MPU,AX_RAW:%d\nAY_RAW:%d\nAZ_RAW:%d\nAX:%.3f\nAY:%.3f\nAZ:%.3f\r\n",
+	              mpu_accel.x_raw,
+	              mpu_accel.y_raw,
+	              mpu_accel.z_raw,
+	              mpu_accel.x_g,
+	              mpu_accel.y_g,
+	              mpu_accel.z_g
+	          );
+
+	          if (len > 0 && len < sizeof(mpu_msg))
+	          {
+	              UART_transmit(&g_uart2, (uint8_t *)mpu_msg, strlen(mpu_msg));
+	          }
+	      }
+	      else
+	      {
+	          char error_msg[] = "MPU read error\r\n";
+	          UART_transmit(&g_uart2, (uint8_t *)error_msg, strlen(error_msg));
+	      }
+	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
