@@ -43,7 +43,7 @@ void light_update()
 
         // --- NEW CALIBRATED MATH ---
         // Maps Raw 216 -> 300 Lux | Raw 822 -> 400 Lux
-        light.lux = (0.165f * raw_filtered) + 264.36f;
+        light.lux = (CALIBRATION_CONSTANT * raw_filtered) + 320.0f; // 264.36f;
 
         // Prevent negative Lux values in very dark rooms
         if (light.lux < 0.0f)
