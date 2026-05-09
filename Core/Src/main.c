@@ -131,7 +131,7 @@ int main(void)
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
 
   OLED_init();
-
+  MPU6050_Init();
 
 
   /* USER CODE END 2 */
