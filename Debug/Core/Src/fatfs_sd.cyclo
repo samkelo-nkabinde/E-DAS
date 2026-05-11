@@ -1,0 +1,10 @@
+../Core/Src/fatfs_sd.c:23:13:SD_CS_High	1
+../Core/Src/fatfs_sd.c:24:13:SD_CS_Low	1
+../Core/Src/fatfs_sd.c:26:16:SPI_RxByte	1
+../Core/Src/fatfs_sd.c:32:13:SPI_TxByte	1
+../Core/Src/fatfs_sd.c:37:16:SD_SendCmd	7
+../Core/Src/fatfs_sd.c:64:9:SD_disk_initialize	14
+../Core/Src/fatfs_sd.c:101:9:SD_disk_status	2
+../Core/Src/fatfs_sd.c:106:9:SD_disk_read	9
+../Core/Src/fatfs_sd.c:125:9:SD_disk_write	10
+../Core/Src/fatfs_sd.c:148:9:SD_disk_ioctl	7

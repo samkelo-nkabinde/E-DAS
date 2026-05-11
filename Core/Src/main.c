@@ -18,12 +18,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include "fatfs.h"
+#include "fatfs_sd.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "led.h"
 #include "button.h"
@@ -37,7 +39,86 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+FATFS fs;
+FIL fil;
 
+void UART_Print(const char *msg) {
+    UART_transmit(&g_uart2, (const uint8_t *)msg, strlen(msg));
+}
+void Test_SD_Card(void) {
+    FRESULT fres;     // FatFs return code
+    char uart_buf[100]; // Buffer for UART messages
+    char read_buf[50];  // Buffer for reading file data
+    UINT bytesWrote;
+    UINT bytesRead;
+
+    UART_Print("\r\n--- Starting SD Card Test ---\r\n");
+
+    // 1. Mount the SD Card
+    // The '1' parameter mounts the file system immediately to check for errors
+    fres = f_mount(&fs, "", 1);
+    if (fres != FR_OK) {
+        sprintf(uart_buf, "ERROR: f_mount failed with code (%i)\r\n", fres);
+        UART_Print(uart_buf);
+        return; // Halt the test if mounting fails
+    }
+    UART_Print("SUCCESS: SD Card Mounted!\r\n");
+
+    // 2. Create and Open a File for Writing
+    fres = f_open(&fil, "test.txt", FA_WRITE | FA_OPEN_ALWAYS | FA_CREATE_ALWAYS);
+    if (fres == FR_OK) {
+        UART_Print("SUCCESS: 'test.txt' opened for writing.\r\n");
+
+        // 3. Write data to the file
+        const char *write_data = "Hello from STM32 FatFs!";
+        fres = f_write(&fil, write_data, strlen(write_data), &bytesWrote);
+
+        if (fres == FR_OK) {
+            sprintf(uart_buf, "SUCCESS: Wrote %i bytes.\r\n", bytesWrote);
+            UART_Print(uart_buf);
+        } else {
+            sprintf(uart_buf, "ERROR: f_write failed with code (%i)\r\n", fres);
+            UART_Print(uart_buf);
+        }
+
+        // 4. Close the file to flush data to the SD card
+        f_close(&fil);
+    } else {
+        sprintf(uart_buf, "ERROR: f_open (write) failed with code (%i)\r\n", fres);
+        UART_Print(uart_buf);
+    }
+
+    // 5. Open the File for Reading
+    fres = f_open(&fil, "test.txt", FA_READ);
+    if (fres == FR_OK) {
+        UART_Print("SUCCESS: 'test.txt' opened for reading.\r\n");
+
+        // 6. Read the data back
+        fres = f_read(&fil, read_buf, sizeof(read_buf) - 1, &bytesRead);
+        if (fres == FR_OK) {
+            read_buf[bytesRead] = '\0'; // Null-terminate the string safely
+            sprintf(uart_buf, "SUCCESS: Read %i bytes -> \"%s\"\r\n", bytesRead, read_buf);
+            UART_Print(uart_buf);
+        } else {
+            sprintf(uart_buf, "ERROR: f_read failed with code (%i)\r\n", fres);
+            UART_Print(uart_buf);
+        }
+
+        // 7. Close the file
+        f_close(&fil);
+    } else {
+        sprintf(uart_buf, "ERROR: f_open (read) failed with code (%i)\r\n", fres);
+        UART_Print(uart_buf);
+    }
+
+    // 8. Unmount the SD Card
+    fres = f_mount(NULL, "", 0);
+    if (fres == FR_OK) {
+        UART_Print("SUCCESS: SD Card Unmounted.\r\n");
+    }
+
+    UART_Print("--- SD Card Test Complete ---\r\n\r\n");
+}
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -53,8 +134,11 @@
 ADC_HandleTypeDef hadc1;
 
 I2C_HandleTypeDef hi2c1;
+I2C_HandleTypeDef hi2c3;
 
 RTC_HandleTypeDef hrtc;
+
+SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim1;
 
@@ -74,11 +158,19 @@ static void MX_TIM1_Init(void);
 static void MX_RTC_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_I2C3_Init(void);
+static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#define MPU6050_ADDR (0x68 << 1) // Results in 0xD0
+
+// MPU6050 Registers
+#define REG_WHO_AM_I     0x75
+#define REG_PWR_MGMT_1   0x6B
+#define REG_ACCEL_XOUT_H 0x3B
 /* USER CODE END 0 */
 
 /**
@@ -106,7 +198,9 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  __HAL_RCC_I2C3_FORCE_RESET();
+    HAL_Delay(2);
+    __HAL_RCC_I2C3_RELEASE_RESET();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -117,6 +211,9 @@ int main(void)
   MX_RTC_Init();
   MX_I2C1_Init();
   MX_ADC1_Init();
+  MX_I2C3_Init();
+  MX_SPI1_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
   UART_init(&g_uart2, &huart2);
   keypad_init();
@@ -127,68 +224,17 @@ int main(void)
   distance_init();
   light_init();
 
-  MPU6050_AccelData mpu_accel;
-  float mpu_temp = 0.0f;
-
-  uint32_t last_mpu_time = 0;
-  char mpu_msg[160];
-
   const char *student_number = "*28118944#\n";
   while (HAL_GetTick() - start < 250);
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
-
-  OLED_init();
-  MPU6050_Init();
-
-  char msg[100];
-
-  snprintf(
-      msg,
-      sizeof(msg),
-      "IDLE SCL:%d SDA:%d\r\n",
-      HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_8),
-      HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_9)
-  );
-
-  UART_transmit(&g_uart2, (uint8_t *)msg, strlen(msg));
   /* USER CODE END 2 */
-
+  Test_SD_Card();
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-	  uart_system_update();
-	  state_machine();
-	  if( 1 == 4) //(HAL_GetTick() - last_mpu_time >= 100)
-	  {
-	      last_mpu_time = HAL_GetTick();
 
-	      if (MPU6050_ReadAccel(&mpu_accel) == MPU6050_OK)
-	      {
-	          int len = snprintf(
-	              mpu_msg,
-	              sizeof(mpu_msg),
-	              "MPU,AX_RAW:%d\nAY_RAW:%d\nAZ_RAW:%d\nAX:%.3f\nAY:%.3f\nAZ:%.3f\r\n",
-	              mpu_accel.x_raw,
-	              mpu_accel.y_raw,
-	              mpu_accel.z_raw,
-	              mpu_accel.x_g,
-	              mpu_accel.y_g,
-	              mpu_accel.z_g
-	          );
-
-	          if (len > 0 && len < sizeof(mpu_msg))
-	          {
-	              UART_transmit(&g_uart2, (uint8_t *)mpu_msg, strlen(mpu_msg));
-	          }
-	      }
-	      else
-	      {
-	          char error_msg[] = "MPU read error\r\n";
-	          UART_transmit(&g_uart2, (uint8_t *)error_msg, strlen(error_msg));
-	      }
-	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -328,6 +374,40 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief I2C3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C3_Init(void)
+{
+
+  /* USER CODE BEGIN I2C3_Init 0 */
+
+  /* USER CODE END I2C3_Init 0 */
+
+  /* USER CODE BEGIN I2C3_Init 1 */
+
+  /* USER CODE END I2C3_Init 1 */
+  hi2c3.Instance = I2C3;
+  hi2c3.Init.ClockSpeed = 100000;
+  hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c3.Init.OwnAddress1 = 0;
+  hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c3.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c3.Init.OwnAddress2 = 0;
+  hi2c3.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c3.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C3_Init 2 */
+
+  /* USER CODE END I2C3_Init 2 */
+
+}
+
+/**
   * @brief RTC Initialization Function
   * @param None
   * @retval None
@@ -379,6 +459,44 @@ static void MX_RTC_Init(void)
       Error_Handler();
   }
   /* USER CODE END RTC_Init 2 */
+
+}
+
+/**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
 
 }
 
@@ -473,10 +591,10 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA1_Stream6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 
 }
@@ -501,7 +619,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, LED_D5_Pin|LED_D4_Pin|LED_D3_Pin|GPIO_PIN_7
-                          |GPIO_PIN_11|GPIO_PIN_12, GPIO_PIN_RESET);
+                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1|GPIO_PIN_2, GPIO_PIN_RESET);
@@ -556,6 +674,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_D2_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PA15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PB7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
@@ -563,10 +688,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
