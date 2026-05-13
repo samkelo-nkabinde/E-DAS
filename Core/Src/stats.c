@@ -53,13 +53,15 @@ void stats_transmit_one(Stat_type_e stat)
             stat_line(line, "Light:", "%4d lux", (int)light.lux);
             break;
         case STAT_X_ACCEL:
-            stat_line(line, "X accel:", "%+5.2f g", 0.0f);
+            stat_line(line, "X accel:", "%+5.2f g", acceleration.x_g);
             break;
+
         case STAT_Y_ACCEL:
-            stat_line(line, "Y accel:", "%+5.2f g", 0.0f);
+            stat_line(line, "Y accel:", "%+5.2f g", acceleration.y_g);
             break;
+
         case STAT_Z_ACCEL:
-            stat_line(line, "Z accel:", "%+5.2f g", 0.0f);
+            stat_line(line, "Z accel:", "%+5.2f g", acceleration.z_g);
             break;
         case STAT_UNSAFE_DRIVING:
             stat_line(line, "Unsafe driving:", "%d", (int)0);

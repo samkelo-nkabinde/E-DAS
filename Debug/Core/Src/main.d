@@ -40,14 +40,13 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
  ../Middlewares/Third_Party/FatFs/src/diskio.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/user_diskio.h \
- ../Core/Inc/fatfs_sd.h ../Core/Inc/main.h \
- ../Middlewares/Third_Party/FatFs/src/diskio.h ../Core/Inc/led.h \
- ../Core/Inc/button.h ../Core/Inc/keypad.h ../Core/Inc/oled.h \
- ../Core/Inc/ssd1306.h ../Core/Inc/ssd1306_conf_template.h \
- ../Core/Inc/ssd1306_fonts.h ../Core/Inc/uart_system.h \
- ../Core/Inc/uart_handle.h ../Core/Inc/command.h ../Core/Inc/date.h \
- ../Core/Inc/stats.h ../Core/Inc/temperature.h \
- ../Core/Inc/kalman_filter.h ../Core/Inc/distance.h ../Core/Inc/light.h \
+ ../Core/Inc/led.h ../Core/Inc/main.h ../Core/Inc/button.h \
+ ../Core/Inc/keypad.h ../Core/Inc/oled.h ../Core/Inc/ssd1306.h \
+ ../Core/Inc/ssd1306_conf_template.h ../Core/Inc/ssd1306_fonts.h \
+ ../Core/Inc/uart_system.h ../Core/Inc/uart_handle.h \
+ ../Core/Inc/command.h ../Core/Inc/date.h ../Core/Inc/stats.h \
+ ../Core/Inc/temperature.h ../Core/Inc/kalman_filter.h \
+ ../Core/Inc/distance.h ../Core/Inc/light.h ../Core/Inc/mp6050.h \
  ../Core/Inc/fuel.h ../Core/Inc/menu.h ../Core/Inc/oled.h \
  ../Core/Inc/state_machine.h ../Core/Inc/button.h ../Core/Inc/menu.h \
  ../Core/Inc/keypad.h ../Core/Inc/led.h ../Core/Inc/mp6050.h
@@ -96,10 +95,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Middlewares/Third_Party/FatFs/src/diskio.h:
 ../Middlewares/Third_Party/FatFs/src/ff.h:
 ../FATFS/Target/user_diskio.h:
-../Core/Inc/fatfs_sd.h:
-../Core/Inc/main.h:
-../Middlewares/Third_Party/FatFs/src/diskio.h:
 ../Core/Inc/led.h:
+../Core/Inc/main.h:
 ../Core/Inc/button.h:
 ../Core/Inc/keypad.h:
 ../Core/Inc/oled.h:
@@ -115,6 +112,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/kalman_filter.h:
 ../Core/Inc/distance.h:
 ../Core/Inc/light.h:
+../Core/Inc/mp6050.h:
 ../Core/Inc/fuel.h:
 ../Core/Inc/menu.h:
 ../Core/Inc/oled.h:

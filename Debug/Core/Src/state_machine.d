@@ -40,7 +40,8 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
  ../Core/Inc/ssd1306_conf_template.h ../Core/Inc/ssd1306_fonts.h \
  ../Core/Inc/menu.h ../Core/Inc/temperature.h ../Core/Inc/kalman_filter.h \
  ../Core/Inc/distance.h ../Core/Inc/light.h ../Core/Inc/fuel.h \
- ../Core/Inc/date.h ../Core/Inc/keypad.h ../Core/Inc/led.h
+ ../Core/Inc/date.h ../Core/Inc/keypad.h ../Core/Inc/led.h \
+ ../Core/Inc/mp6050.h
 ../Core/Inc/state_machine.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -93,3 +94,4 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
 ../Core/Inc/date.h:
 ../Core/Inc/keypad.h:
 ../Core/Inc/led.h:
+../Core/Inc/mp6050.h:

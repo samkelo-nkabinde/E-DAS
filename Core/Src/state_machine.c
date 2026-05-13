@@ -6,6 +6,7 @@
  */
 
 #include "state_machine.h"
+#include "mp6050.h"
 
 static state_e current_state = STATE_TOP_MENU;
 static top_menu_e current_top_menu = TOP_MEASUREMENTS;
@@ -35,6 +36,7 @@ void state_machine(void)
 	light_update();
 	update_temperature();
 	compute_fuel_efficiency();
+	MPU6050_ReadAccel(&acceleration);
 
 	static uint8_t light_counter = 0;
 	light_counter++;

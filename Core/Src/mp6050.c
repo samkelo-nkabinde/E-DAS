@@ -8,29 +8,35 @@
 #include "main.h"
 #include "mp6050.h"
 
-#define MPU6050_SCL_PORT GPIOA
+#define MPU6050_SCL_PORT GPIOB
 #define MPU6050_SCL_PIN  GPIO_PIN_8
 
-#define MPU6050_SDA_PORT GPIOC
-#define MPU6050_SDA_PIN  GPIO_PIN_8
+#define MPU6050_SDA_PORT GPIOB
+#define MPU6050_SDA_PIN  GPIO_PIN_9
 
-#define MPU6050_ADDR     0x68
+#define MPU6050_ADDR_LOW   (0x68 << 1)
+#define MPU6050_ADDR_HIGH  (0x69 << 1)
 
-#define REG_SMPLRT_DIV   0x19
-#define REG_CONFIG       0x1A
-#define REG_GYRO_CONFIG  0x1B
-#define REG_ACCEL_CONFIG 0x1C
-#define REG_ACCEL_XOUT_H 0x3B
-#define REG_TEMP_OUT_H   0x41
-#define REG_PWR_MGMT_1   0x6B
-#define REG_WHO_AM_I     0x75
+static uint16_t mpu6050_addr = MPU6050_ADDR_LOW;
+
+/* MPU-6050 registers */
+#define REG_SMPLRT_DIV    0x19
+#define REG_CONFIG        0x1A
+#define REG_GYRO_CONFIG   0x1B
+#define REG_ACCEL_CONFIG  0x1C
+#define REG_ACCEL_XOUT_H  0x3B
+#define REG_TEMP_OUT_H    0x41
+#define REG_PWR_MGMT_1    0x6B
+#define REG_WHO_AM_I      0x75
 
 /*
  * AFS_SEL = 0 gives +/- 2g.
  * The MPU-6050 register map gives 16384 LSB/g for this setting.
  */
-#define ACCEL_LSB_PER_G  16384.0f
+#define ACCEL_LSB_PER_G   16384.0f
 
+
+MPU6050_AccelData acceleration;
 
 
 static MPU6050_Calibration accel_cal =
@@ -39,274 +45,72 @@ static MPU6050_Calibration accel_cal =
     .cx = 0.0f, .cy = 0.0f, .cz = 0.0f
 };
 
-static void delay_i2c(void)
-{
-    /*
-     * Small delay for software I2C.
-     * Increase this if your board is unstable.
-     */
-    for (volatile int i = 0; i < 40; i++)
-    {
-        __NOP();
-    }
-}
-
-static void SDA_High(void)
-{
-    HAL_GPIO_WritePin(MPU6050_SDA_PORT, MPU6050_SDA_PIN, GPIO_PIN_SET);
-}
-
-static void SDA_Low(void)
-{
-    HAL_GPIO_WritePin(MPU6050_SDA_PORT, MPU6050_SDA_PIN, GPIO_PIN_RESET);
-}
-
-static void SCL_High(void)
-{
-    HAL_GPIO_WritePin(MPU6050_SCL_PORT, MPU6050_SCL_PIN, GPIO_PIN_SET);
-}
-
-static void SCL_Low(void)
-{
-    HAL_GPIO_WritePin(MPU6050_SCL_PORT, MPU6050_SCL_PIN, GPIO_PIN_RESET);
-}
-
-static GPIO_PinState SDA_Read(void)
-{
-    return HAL_GPIO_ReadPin(MPU6050_SDA_PORT, MPU6050_SDA_PIN);
-}
-
-static void I2C_Start(void)
-{
-    SDA_High();
-    SCL_High();
-    delay_i2c();
-
-    SDA_Low();
-    delay_i2c();
-
-    SCL_Low();
-    delay_i2c();
-}
-
-static void I2C_Stop(void)
-{
-    SDA_Low();
-    delay_i2c();
-
-    SCL_High();
-    delay_i2c();
-
-    SDA_High();
-    delay_i2c();
-}
-
-static uint8_t I2C_WriteByte(uint8_t data)
-{
-    for (uint8_t i = 0; i < 8; i++)
-    {
-        if (data & 0x80)
-        {
-            SDA_High();
-        }
-        else
-        {
-            SDA_Low();
-        }
-
-        delay_i2c();
-
-        SCL_High();
-        delay_i2c();
-
-        SCL_Low();
-        delay_i2c();
-
-        data <<= 1;
-    }
-
-    SDA_High();
-    delay_i2c();
-
-    SCL_High();
-    delay_i2c();
-
-    uint8_t ack = (SDA_Read() == GPIO_PIN_RESET);
-
-    SCL_Low();
-    delay_i2c();
-
-    return ack;
-}
-
-static uint8_t I2C_ReadByte(uint8_t ack)
-{
-    uint8_t data = 0;
-
-    SDA_High();
-
-    for (uint8_t i = 0; i < 8; i++)
-    {
-        data <<= 1;
-
-        SCL_High();
-        delay_i2c();
-
-        if (SDA_Read() == GPIO_PIN_SET)
-        {
-            data |= 1;
-        }
-
-        SCL_Low();
-        delay_i2c();
-    }
-
-    if (ack)
-    {
-        SDA_Low();
-    }
-    else
-    {
-        SDA_High();
-    }
-
-    delay_i2c();
-
-    SCL_High();
-    delay_i2c();
-
-    SCL_Low();
-    delay_i2c();
-
-    SDA_High();
-
-    return data;
-}
-
 static uint8_t MPU6050_WriteReg(uint8_t reg, uint8_t value)
 {
-    I2C_Start();
+    HAL_StatusTypeDef status;
 
-    if (!I2C_WriteByte((MPU6050_ADDR << 1) | 0))
+    status = HAL_I2C_Mem_Write(
+        &hi2c1,
+        mpu6050_addr,
+        reg,
+        I2C_MEMADD_SIZE_8BIT,
+        &value,
+        1,
+        100
+    );
+
+    if (status == HAL_OK)
     {
-        I2C_Stop();
-        return MPU6050_ERROR;
+        return MPU6050_OK;
     }
 
-    if (!I2C_WriteByte(reg))
-    {
-        I2C_Stop();
-        return MPU6050_ERROR;
-    }
-
-    if (!I2C_WriteByte(value))
-    {
-        I2C_Stop();
-        return MPU6050_ERROR;
-    }
-
-    I2C_Stop();
-    return MPU6050_OK;
+    return MPU6050_ERROR;
 }
 
 static uint8_t MPU6050_ReadRegs(uint8_t reg, uint8_t *buffer, uint8_t length)
 {
-    I2C_Start();
+    HAL_StatusTypeDef status;
 
-    if (!I2C_WriteByte((MPU6050_ADDR << 1) | 0))
+    if (buffer == 0 || length == 0)
     {
-        I2C_Stop();
         return MPU6050_ERROR;
     }
 
-    if (!I2C_WriteByte(reg))
+    status = HAL_I2C_Mem_Read(
+        &hi2c1,
+        mpu6050_addr,
+        reg,
+        I2C_MEMADD_SIZE_8BIT,
+        buffer,
+        length,
+        100
+    );
+
+    if (status == HAL_OK)
     {
-        I2C_Stop();
-        return MPU6050_ERROR;
+        return MPU6050_OK;
     }
 
-    I2C_Start();
-
-    if (!I2C_WriteByte((MPU6050_ADDR << 1) | 1))
-    {
-        I2C_Stop();
-        return MPU6050_ERROR;
-    }
-
-    for (uint8_t i = 0; i < length; i++)
-    {
-        buffer[i] = I2C_ReadByte(i < (length - 1));
-    }
-
-    I2C_Stop();
-    return MPU6050_OK;
+    return MPU6050_ERROR;
 }
 
-uint8_t MPU6050_Init(void)
+uint8_t MPU6050_ReadWhoAmI(uint8_t *who)
 {
-    uint8_t who = 0;
-
-    HAL_Delay(100);
-
-    if (MPU6050_ReadRegs(REG_WHO_AM_I, &who, 1) != MPU6050_OK)
+    if (who == 0)
     {
         return MPU6050_ERROR;
     }
 
-    if (who != 0x68)
+    mpu6050_addr = MPU6050_ADDR_LOW;
+
+    if (MPU6050_ReadRegs(REG_WHO_AM_I, who, 1) == MPU6050_OK)
     {
-        return MPU6050_ERROR;
+        return MPU6050_OK;
     }
 
-    /*
-     * The register map says the device powers up in sleep mode.
-     * Clear sleep and use the X gyro clock by writing 0x01.
-     */
-    if (MPU6050_WriteReg(REG_PWR_MGMT_1, 0x01) != MPU6050_OK)
-    {
-        return MPU6050_ERROR;
-    }
+    mpu6050_addr = MPU6050_ADDR_HIGH;
 
-    HAL_Delay(30);
-
-    /*
-     * Sample rate:
-     * With DLPF enabled, base rate is 1 kHz.
-     * sample_rate = 1000 / (1 + SMPLRT_DIV)
-     * 9 gives 100 Hz.
-     */
-    if (MPU6050_WriteReg(REG_SMPLRT_DIV, 9) != MPU6050_OK)
-    {
-        return MPU6050_ERROR;
-    }
-
-    /*
-     * DLPF_CFG = 3.
-     * This gives a filtered output suitable for vehicle motion.
-     */
-    if (MPU6050_WriteReg(REG_CONFIG, 0x03) != MPU6050_OK)
-    {
-        return MPU6050_ERROR;
-    }
-
-    /*
-     * Gyro full scale: +/- 250 deg/s.
-     */
-    if (MPU6050_WriteReg(REG_GYRO_CONFIG, 0x00) != MPU6050_OK)
-    {
-        return MPU6050_ERROR;
-    }
-
-    /*
-     * Accelerometer full scale: +/- 2g.
-     * AFS_SEL = 0, sensitivity = 16384 LSB/g.
-     */
-    if (MPU6050_WriteReg(REG_ACCEL_CONFIG, 0x00) != MPU6050_OK)
-    {
-        return MPU6050_ERROR;
-    }
-
-    return MPU6050_OK;
+    return MPU6050_ReadRegs(REG_WHO_AM_I, who, 1);
 }
 
 uint8_t MPU6050_ReadAccel(MPU6050_AccelData *data)
@@ -320,7 +124,7 @@ uint8_t MPU6050_ReadAccel(MPU6050_AccelData *data)
 
     /*
      * Burst read from ACCEL_XOUT_H.
-     * This keeps X, Y, and Z from the same sample instant.
+     * This reads X, Y, and Z from the same sample instant.
      */
     if (MPU6050_ReadRegs(REG_ACCEL_XOUT_H, raw, 6) != MPU6050_OK)
     {
@@ -361,7 +165,7 @@ uint8_t MPU6050_ReadTemperature(float *temp_c)
 
     /*
      * Formula from the MPU-6050 register map:
-     * temp C = raw / 340 + 36.53
+     * temperature in Celsius = raw / 340 + 36.53
      */
     *temp_c = ((float)temp_raw / 340.0f) + 36.53f;
 
@@ -395,11 +199,10 @@ MPU6050_Calibration MPU6050_CalculateAxisCalibration(
      * - orientation should read -1g.
      * zero orientation should read 0g.
      *
-     * A simple scale and offset estimate:
+     * Simple scale and offset:
      * m = 2 / (raw_pos - raw_neg)
      * c = -m * raw_zero
      */
-
     float m = 2.0f / (raw_pos - raw_neg);
     float c = -m * raw_zero;
 
@@ -408,12 +211,82 @@ MPU6050_Calibration MPU6050_CalculateAxisCalibration(
 
     return cal;
 }
-uint8_t MPU6050_ReadWhoAmI(uint8_t *who)
+
+uint8_t MPU6050_Init(void)
 {
-    if (who == 0)
+    uint8_t who = 0;
+
+    HAL_Delay(100);
+
+    mpu6050_addr = MPU6050_ADDR_LOW;
+
+    if (MPU6050_ReadRegs(REG_WHO_AM_I, &who, 1) != MPU6050_OK || who != 0x68)
+    {
+        mpu6050_addr = MPU6050_ADDR_HIGH;
+
+        if (MPU6050_ReadRegs(REG_WHO_AM_I, &who, 1) != MPU6050_OK || who != 0x68)
+        {
+            return MPU6050_ERROR;
+        }
+    }
+
+    if (MPU6050_WriteReg(REG_PWR_MGMT_1, 0x01) != MPU6050_OK)
     {
         return MPU6050_ERROR;
     }
 
-    return MPU6050_ReadRegs(REG_WHO_AM_I, who, 1);
+    HAL_Delay(30);
+
+    if (MPU6050_WriteReg(REG_SMPLRT_DIV, 9) != MPU6050_OK)
+    {
+        return MPU6050_ERROR;
+    }
+
+    if (MPU6050_WriteReg(REG_CONFIG, 0x03) != MPU6050_OK)
+    {
+        return MPU6050_ERROR;
+    }
+
+    if (MPU6050_WriteReg(REG_GYRO_CONFIG, 0x00) != MPU6050_OK)
+    {
+        return MPU6050_ERROR;
+    }
+
+    if (MPU6050_WriteReg(REG_ACCEL_CONFIG, 0x00) != MPU6050_OK)
+    {
+        return MPU6050_ERROR;
+    }
+
+    return MPU6050_OK;
+}
+
+float MPU6050_CalculateAccelerationG(const MPU6050_AccelData *data)
+{
+    if (data == 0)
+    {
+        return 0.0f;
+    }
+
+    return sqrtf(
+        (data->x_g * data->x_g) +
+        (data->y_g * data->y_g) +
+        (data->z_g * data->z_g)
+    );
+}
+
+float MPU6050_CalculateAccelerationMS2(const MPU6050_AccelData *data)
+{
+    float acceleration_g;
+
+    if (data == 0)
+    {
+        return 0.0f;
+    }
+
+    acceleration_g = MPU6050_CalculateAccelerationG(data);
+
+    /*
+     * 1g is about 9.81 m/s^2.
+     */
+    return acceleration_g * 9.81f;
 }

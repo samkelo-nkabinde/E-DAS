@@ -20,6 +20,7 @@
 #include "distance.h"
 #include "date.h"
 #include "light.h"
+#include "mp6050.h"
 
 typedef enum
 {

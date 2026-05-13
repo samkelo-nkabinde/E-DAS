@@ -9,6 +9,13 @@
 #define INC_MP6050_H_
 
 #include <stdint.h>
+#include "main.h"
+
+#define MPU6050_OK     0
+#define MPU6050_ERROR  1
+
+extern I2C_HandleTypeDef hi2c1;
+
 
 #define MPU6050_OK     0
 #define MPU6050_ERROR  1
@@ -26,6 +33,7 @@ typedef struct
     float x_g;
     float y_g;
     float z_g;
+
 } MPU6050_AccelData;
 
 typedef struct
@@ -37,19 +45,50 @@ typedef struct
     float cx;
     float cy;
     float cz;
+
 } MPU6050_Calibration;
 
-uint8_t MPU6050_ReadWhoAmI(uint8_t *who);
+
+extern MPU6050_AccelData acceleration;
+/*
+ * Initializes the MPU-6050.
+ * Returns MPU6050_OK if successful.
+ */
 uint8_t MPU6050_Init(void);
+
+/*
+ * Reads the accelerometer values.
+ * The raw values are stored in x_raw, y_raw, and z_raw.
+ * The converted g values are stored in x_g, y_g, and z_g.
+ */
 uint8_t MPU6050_ReadAccel(MPU6050_AccelData *data);
+
+/*
+ * Reads the internal MPU-6050 temperature.
+ */
 uint8_t MPU6050_ReadTemperature(float *temp_c);
 
+/*
+ * Sets the accelerometer calibration values.
+ */
 void MPU6050_SetCalibration(MPU6050_Calibration cal);
+
+/*
+ * Calculates simple one-axis calibration values.
+ */
 MPU6050_Calibration MPU6050_CalculateAxisCalibration(
     float raw_pos,
     float raw_neg,
     float raw_zero
 );
 
+/*
+ * Reads the WHO_AM_I register.
+ * Expected value is 0x68.
+ */
+uint8_t MPU6050_ReadWhoAmI(uint8_t *who);
+
+float MPU6050_CalculateAccelerationG(const MPU6050_AccelData *data);
+float MPU6050_CalculateAccelerationMS2(const MPU6050_AccelData *data);
 
 #endif /* INC_MP6050_H_ */

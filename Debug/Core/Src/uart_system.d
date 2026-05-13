@@ -38,7 +38,8 @@ Core/Src/uart_system.o: ../Core/Src/uart_system.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
  ../Core/Inc/command.h ../Core/Inc/date.h ../Core/Inc/stats.h \
  ../Core/Inc/temperature.h ../Core/Inc/kalman_filter.h \
- ../Core/Inc/distance.h ../Core/Inc/light.h ../Core/Inc/fuel.h
+ ../Core/Inc/distance.h ../Core/Inc/light.h ../Core/Inc/mp6050.h \
+ ../Core/Inc/fuel.h
 ../Core/Inc/uart_system.h:
 ../Core/Inc/uart_handle.h:
 ../Core/Inc/main.h:
@@ -85,4 +86,5 @@ Core/Src/uart_system.o: ../Core/Src/uart_system.c \
 ../Core/Inc/kalman_filter.h:
 ../Core/Inc/distance.h:
 ../Core/Inc/light.h:
+../Core/Inc/mp6050.h:
 ../Core/Inc/fuel.h:
