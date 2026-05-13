@@ -35,6 +35,7 @@
 #include "menu.h"
 #include "state_machine.h"
 #include "mp6050.h"
+#include "sd_logger.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -160,10 +161,6 @@ static void MX_ADC1_Init(void);
 static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 /* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
 
 /**
@@ -201,8 +198,8 @@ int main(void)
   MX_RTC_Init();
   MX_I2C1_Init();
   MX_ADC1_Init();
-  MX_FATFS_Init();
   MX_SPI1_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
   UART_init(&g_uart2, &huart2);
   keypad_init();
@@ -218,16 +215,69 @@ int main(void)
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
   OLED_init();
   MPU6050_Init();
+
+  if (SD_Logger_Init())
+  {
+      UART_transmit(&g_uart2, (uint8_t *)"SD logger ready\r\n", 17);
+  }
+  else
+  {
+      UART_transmit(&g_uart2, (uint8_t *)"SD logger init failed\r\n", 23);
+  }
+
+  static uint8_t printed_sd_file = 0;
+
+  if (HAL_GetTick() > 5000 && printed_sd_file == 0)
+  {
+      printed_sd_file = 1;
+      SD_Logger_PrintFileUART();
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-	  state_machine();
-	  uart_system_update();
-    /* USER CODE BEGIN 3 */
+      static uint32_t last_sd_log_time = 0;
+      static uint8_t printed_sd_file = 0;
+
+      if (HAL_GetTick() - last_sd_log_time >= 1000)
+      {
+          last_sd_log_time = HAL_GetTick();
+
+          SD_LogEntry_t entry;
+
+          date_update(&system_date);
+          entry.date = system_date;
+
+          entry.light_lux = light.lux;
+          entry.temperature_c = temperature.filtered;
+          entry.distance_cm = distance.filtered;
+
+          entry.accel_x_g = acceleration.x_g;
+          entry.accel_y_g = acceleration.y_g;
+          entry.accel_z_g = acceleration.z_g;
+
+          entry.unsafe_driving = 0;
+          entry.impact_warning = 0;
+          entry.low_light_warning = 0;
+          entry.proximity_warning = 0;
+          entry.high_temperature_warning = 0;
+
+          entry.latitude = 0.000000f;
+          entry.longitude = 0.000000f;
+
+          if (!SD_Logger_WriteEntry(&entry))
+          {
+              UART_transmit(&g_uart2, (uint8_t *)"SD write failed\r\n", 17);
+          }
+      }
+
+      if (HAL_GetTick() > 5000 && printed_sd_file == 0)
+      {
+          printed_sd_file = 1;
+          SD_Logger_PrintFileUART();
+      }
   }
   /* USER CODE END 3 */
 }
@@ -592,9 +642,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_D5_Pin LED_D4_Pin LED_D3_Pin PA7
-                           PA11 PA12 */
+                           PA11 PA12 PA15 */
   GPIO_InitStruct.Pin = LED_D5_Pin|LED_D4_Pin|LED_D3_Pin|GPIO_PIN_7
-                          |GPIO_PIN_11|GPIO_PIN_12;
+                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -631,13 +681,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_D2_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;

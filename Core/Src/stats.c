@@ -64,11 +64,18 @@ void stats_transmit_one(Stat_type_e stat)
             stat_line(line, "Z accel:", "%+5.2f g", acceleration.z_g);
             break;
         case STAT_UNSAFE_DRIVING:
-            stat_line(line, "Unsafe driving:", "%d", (int)0);
+        {
+            float total_g = MPU6050_CalculateAccelerationG(&acceleration);
+            stat_line(line, "Unsafe driving:", "%d", (int)(total_g > 1.5f));
             break;
+        }
+
         case STAT_IMPACT_DETECTED:
-            stat_line(line, "Impact detected:", "%d", (int)0);
+        {
+            float total_g = MPU6050_CalculateAccelerationG(&acceleration);
+            stat_line(line, "Impact detected:", "%d", (int)(total_g > 3.0f));
             break;
+        }
         case STAT_LOW_LIGHT_WARNING:
             stat_line(line, "Low-Light warning:", "%d", (int)light.warning);
             break;

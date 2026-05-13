@@ -19,6 +19,7 @@
 #include "light.h"
 #include "fuel.h"
 #include "date.h"
+#include "mp6050.h"
 
 void display_default_page(void);
 void display_entry_page(void);

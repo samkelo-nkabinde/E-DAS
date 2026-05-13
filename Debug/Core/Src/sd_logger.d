@@ -1,6 +1,7 @@
-Core/Src/state_machine.o: ../Core/Src/state_machine.c \
- ../Core/Inc/state_machine.h ../Core/Inc/main.h \
- ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
+Core/Src/sd_logger.o: ../Core/Src/sd_logger.c ../Core/Inc/sd_logger.h \
+ ../FATFS/App/fatfs.h ../Middlewares/Third_Party/FatFs/src/ff.h \
+ ../Middlewares/Third_Party/FatFs/src/integer.h ../FATFS/Target/ffconf.h \
+ ../Core/Inc/main.h ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h \
@@ -36,13 +37,15 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/button.h ../Core/Inc/oled.h ../Core/Inc/ssd1306.h \
- ../Core/Inc/ssd1306_conf_template.h ../Core/Inc/ssd1306_fonts.h \
- ../Core/Inc/menu.h ../Core/Inc/temperature.h ../Core/Inc/kalman_filter.h \
- ../Core/Inc/distance.h ../Core/Inc/light.h ../Core/Inc/fuel.h \
- ../Core/Inc/date.h ../Core/Inc/mp6050.h ../Core/Inc/keypad.h \
- ../Core/Inc/led.h ../Core/Inc/mp6050.h
-../Core/Inc/state_machine.h:
+ ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
+ ../Middlewares/Third_Party/FatFs/src/diskio.h \
+ ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/user_diskio.h \
+ ../Core/Inc/date.h ../Core/Inc/main.h ../Core/Inc/uart_handle.h
+../Core/Inc/sd_logger.h:
+../FATFS/App/fatfs.h:
+../Middlewares/Third_Party/FatFs/src/ff.h:
+../Middlewares/Third_Party/FatFs/src/integer.h:
+../FATFS/Target/ffconf.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -80,19 +83,10 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
-../Core/Inc/button.h:
-../Core/Inc/oled.h:
-../Core/Inc/ssd1306.h:
-../Core/Inc/ssd1306_conf_template.h:
-../Core/Inc/ssd1306_fonts.h:
-../Core/Inc/menu.h:
-../Core/Inc/temperature.h:
-../Core/Inc/kalman_filter.h:
-../Core/Inc/distance.h:
-../Core/Inc/light.h:
-../Core/Inc/fuel.h:
+../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h:
+../Middlewares/Third_Party/FatFs/src/diskio.h:
+../Middlewares/Third_Party/FatFs/src/ff.h:
+../FATFS/Target/user_diskio.h:
 ../Core/Inc/date.h:
-../Core/Inc/mp6050.h:
-../Core/Inc/keypad.h:
-../Core/Inc/led.h:
-../Core/Inc/mp6050.h:
+../Core/Inc/main.h:
+../Core/Inc/uart_handle.h:

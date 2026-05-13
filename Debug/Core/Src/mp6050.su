@@ -6,3 +6,5 @@
 ../Core/Src/mp6050.c:175:6:MPU6050_SetCalibration	12	static
 ../Core/Src/mp6050.c:180:21:MPU6050_CalculateAxisCalibration	64	static
 ../Core/Src/mp6050.c:215:9:MPU6050_Init	16	static
+../Core/Src/mp6050.c:263:7:MPU6050_CalculateAccelerationG	16	static
+../Core/Src/mp6050.c:277:7:MPU6050_CalculateAccelerationMS2	24	static

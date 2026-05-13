@@ -38,7 +38,7 @@ Core/Src/menu.o: ../Core/Src/menu.c ../Core/Inc/menu.h ../Core/Inc/oled.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
  ../Core/Inc/ssd1306_fonts.h ../Core/Inc/temperature.h \
  ../Core/Inc/kalman_filter.h ../Core/Inc/distance.h ../Core/Inc/light.h \
- ../Core/Inc/fuel.h ../Core/Inc/date.h
+ ../Core/Inc/fuel.h ../Core/Inc/date.h ../Core/Inc/mp6050.h
 ../Core/Inc/menu.h:
 ../Core/Inc/oled.h:
 ../Core/Inc/ssd1306.h:
@@ -87,3 +87,4 @@ Core/Src/menu.o: ../Core/Src/menu.c ../Core/Inc/menu.h ../Core/Inc/oled.h \
 ../Core/Inc/light.h:
 ../Core/Inc/fuel.h:
 ../Core/Inc/date.h:
+../Core/Inc/mp6050.h:

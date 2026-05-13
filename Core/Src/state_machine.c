@@ -37,7 +37,6 @@ void state_machine(void)
 	update_temperature();
 	compute_fuel_efficiency();
 	MPU6050_ReadAccel(&acceleration);
-
 	static uint8_t light_counter = 0;
 	light_counter++;
 	if (light_counter >= 6)

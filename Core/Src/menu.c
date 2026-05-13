@@ -87,8 +87,8 @@ void display_1_2(void)
     char date[20];
     char line2[20];
     char line3[20];
-
-    format_line(line2, "Accel:", "|%.2f| g", 0.0f);
+    float total_g = MPU6050_CalculateAccelerationG(&acceleration);
+    format_line(line2, "Accel:", "|%.2f| g", total_g);
     format_line(line3, "Light:", "%d lux",  (int)light.lux);
     date_format(&system_date, date, sizeof(date), 1);
 
