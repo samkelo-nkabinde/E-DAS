@@ -39,7 +39,11 @@ FATFS/Target/user_diskio.o: ../FATFS/Target/user_diskio.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/fatfs_sd.h ../Core/Inc/main.h \
+ ../Core/Inc/uart_system.h ../Core/Inc/uart_handle.h ../Core/Inc/main.h \
+ ../Core/Inc/command.h ../Core/Inc/date.h ../Core/Inc/stats.h \
+ ../Core/Inc/temperature.h ../Core/Inc/kalman_filter.h \
+ ../Core/Inc/distance.h ../Core/Inc/light.h ../Core/Inc/mp6050.h \
+ ../Core/Inc/fuel.h ../Core/Inc/fatfs_sd.h \
  ../Middlewares/Third_Party/FatFs/src/diskio.h
 ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h:
 ../Middlewares/Third_Party/FatFs/src/diskio.h:
@@ -83,6 +87,17 @@ FATFS/Target/user_diskio.o: ../FATFS/Target/user_diskio.c \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
-../Core/Inc/fatfs_sd.h:
+../Core/Inc/uart_system.h:
+../Core/Inc/uart_handle.h:
 ../Core/Inc/main.h:
+../Core/Inc/command.h:
+../Core/Inc/date.h:
+../Core/Inc/stats.h:
+../Core/Inc/temperature.h:
+../Core/Inc/kalman_filter.h:
+../Core/Inc/distance.h:
+../Core/Inc/light.h:
+../Core/Inc/mp6050.h:
+../Core/Inc/fuel.h:
+../Core/Inc/fatfs_sd.h:
 ../Middlewares/Third_Party/FatFs/src/diskio.h:

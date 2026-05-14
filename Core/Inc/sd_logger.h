@@ -13,6 +13,7 @@
 #include "uart_handle.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 typedef struct
 {
@@ -37,6 +38,11 @@ typedef struct
 
 } SD_LogEntry_t;
 
-uint8_t SD_Logger_PrintFileUART(void);
+extern SD_LogEntry_t entry;
+extern bool log_data;
 
+uint8_t SD_Logger_PrintFileUART(void);
+uint8_t SD_Logger_Init(void);
+uint8_t SD_Logger_WriteEntry(const SD_LogEntry_t *entry);
+uint8_t SD_Logger_ClearFile(void);
 #endif /* INC_SD_LOGGER_H_ */

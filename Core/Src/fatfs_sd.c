@@ -14,7 +14,8 @@
 #define CMD24   (24)        // WRITE_BLOCK
 #define CMD55   (55)        // APP_CMD
 #define CMD58   (58)        // READ_OCR
-#define ACMD41  (41)        // APP_SEND_OP_COND
+#define ACMD41  (0x80 + 41)       // APP_SEND_OP_COND
+
 
 static volatile DSTATUS Stat = STA_NOINIT;
 static uint8_t CardType;
@@ -23,14 +24,23 @@ static uint8_t CardType;
 static void SD_CS_High(void) { HAL_GPIO_WritePin(SD_CS_PORT, SD_CS_PIN, GPIO_PIN_SET); }
 static void SD_CS_Low(void)  { HAL_GPIO_WritePin(SD_CS_PORT, SD_CS_PIN, GPIO_PIN_RESET); }
 
-static uint8_t SPI_RxByte(void) {
-    uint8_t dummy = 0xFF, data = 0;
-    HAL_SPI_TransmitReceive(HSPI_SD, &dummy, &data, 1, 10);
-    return data;
+static uint8_t SPI_TxRxByte(uint8_t data)
+{
+    uint8_t rx = 0x00;
+
+    HAL_SPI_TransmitReceive(HSPI_SD, &data, &rx, 1, HAL_MAX_DELAY);
+
+    return rx;
 }
 
-static void SPI_TxByte(uint8_t data) {
-    HAL_SPI_Transmit(HSPI_SD, &data, 1, 10);
+static uint8_t SPI_RxByte(void)
+{
+    return SPI_TxRxByte(0xFF);
+}
+
+static void SPI_TxByte(uint8_t data)
+{
+    SPI_TxRxByte(data);
 }
 
 // Send a command to the SD card
@@ -61,40 +71,124 @@ static uint8_t SD_SendCmd(uint8_t cmd, uint32_t arg) {
 
 // --- FatFs Interface Functions ---
 
-DSTATUS SD_disk_initialize(BYTE pdrv) {
-    uint8_t n, type, ocr[4];
-    if (pdrv) return STA_NOINIT;
+DSTATUS SD_disk_initialize(BYTE pdrv)
+{
+    uint8_t n;
+    uint8_t type = 0;
+    uint8_t ocr[4];
+    uint8_t response;
+    uint32_t timeout;
 
-    // Give SD card time to wake up
-    HAL_Delay(10);
-    for (n = 0; n < 10; n++) SPI_TxByte(0xFF);
-
-    if (SD_SendCmd(CMD0, 0) == 1) { // Enter Idle state
-        if (SD_SendCmd(CMD8, 0x1AA) == 1) { // SDv2
-            for (n = 0; n < 4; n++) ocr[n] = SPI_RxByte();
-            if (ocr[2] == 0x01 && ocr[3] == 0xAA) {
-                            // ADDED TIMEOUT PROTECTION
-                            uint32_t timeout = HAL_GetTick() + 1000; // 1 second maximum wait
-                            while (SD_SendCmd(ACMD41, 1UL << 30)) {
-                                if (HAL_GetTick() > timeout) break; // Break the loop if it takes too long
-                            }
-
-                            if (SD_SendCmd(CMD58, 0) == 0) {
-                    for (n = 0; n < 4; n++) ocr[n] = SPI_RxByte();
-                    type = (ocr[0] & 0x40) ? 3 : 2; // SDHC/SDXC or SDv2
-                }
-            }
-        }
+    if (pdrv)
+    {
+        return STA_NOINIT;
     }
-    CardType = type;
+
+    Stat = STA_NOINIT;
+    CardType = 0;
+
+    SD_CS_High();
+    HAL_Delay(10);
+
+    // Send at least 74 clock pulses with CS high
+    for (n = 0; n < 10; n++)
+    {
+        SPI_TxByte(0xFF);
+    }
+
+    SD_CS_High();
+    HAL_Delay(10);
+
+   // SD_DebugPrint("CS high idle", SPI_RxByte());
+
+    SD_CS_Low();
+    HAL_Delay(1);
+  //  SD_DebugPrint("CS low idle", SPI_RxByte());
     SD_CS_High();
     SPI_RxByte();
 
-    if (type) {
-        Stat &= ~STA_NOINIT; // Initialization succeeded
-    } else {
-        Stat |= STA_NOINIT;  // Initialization failed
+    // CMD0: enter idle state
+    response = SD_SendCmd(CMD0, 0);
+   // SD_DebugPrint("CMD0", response);
+    SD_CS_High();
+    SPI_RxByte();
+
+    if (response != 0x01)
+    {
+        return STA_NOINIT;
     }
+
+    // CMD8: check SD v2 card
+    response = SD_SendCmd(CMD8, 0x000001AA);
+
+    for (n = 0; n < 4; n++)
+    {
+        ocr[n] = SPI_RxByte();
+    }
+   // SD_DebugPrint("CMD8", response);
+    SD_CS_High();
+    SPI_RxByte();
+
+    if (response == 0x01 && ocr[2] == 0x01 && ocr[3] == 0xAA)
+    {
+        // SD v2 card
+        timeout = HAL_GetTick() + 1000;
+
+        do
+        {
+            response = SD_SendCmd(ACMD41, 1UL << 30);
+            SD_CS_High();
+            SPI_RxByte();
+
+            if (HAL_GetTick() > timeout)
+            {
+                return STA_NOINIT;
+            }
+
+        } while (response != 0x00);
+
+        // CMD58: read OCR
+        response = SD_SendCmd(CMD58, 0);
+
+        for (n = 0; n < 4; n++)
+        {
+            ocr[n] = SPI_RxByte();
+        }
+     //   SD_DebugPrint("CMD58", response);
+        SD_CS_High();
+        SPI_RxByte();
+
+        if (response != 0x00)
+        {
+            return STA_NOINIT;
+        }
+
+        if (ocr[0] & 0x40)
+        {
+            type = 3;   // SDHC or SDXC
+        }
+        else
+        {
+            type = 2;   // SDSC v2
+        }
+    }
+    else
+    {
+        // For now, only support SD v2 cards
+        return STA_NOINIT;
+    }
+
+    CardType = type;
+
+    if (CardType)
+    {
+        Stat &= ~STA_NOINIT;
+    }
+    else
+    {
+        Stat = STA_NOINIT;
+    }
+
     return Stat;
 }
 
@@ -145,23 +239,45 @@ DRESULT SD_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count) {
     return RES_ERROR;
 }
 
-DRESULT SD_disk_ioctl(BYTE pdrv, BYTE cmd, void* buff) {
-    if (pdrv) return RES_PARERR;
-    if (Stat & STA_NOINIT) return RES_NOTRDY;
-
-    DRESULT res = RES_ERROR;
-    switch (cmd) {
-        case CTRL_SYNC: // Wait for write process to end
-            SD_CS_Low();
-            if (SPI_RxByte() == 0xFF) res = RES_OK;
-            SD_CS_High();
-            break;
-        case GET_SECTOR_COUNT:
-        case GET_SECTOR_SIZE:
-        case GET_BLOCK_SIZE:
-            // Minimal implementation usually returns OK for basic FAT32 setups
-            res = RES_OK;
-            break;
+DRESULT SD_disk_ioctl(BYTE pdrv, BYTE cmd, void* buff)
+{
+    if (pdrv)
+    {
+        return RES_PARERR;
     }
-    return res;
+
+    if (Stat & STA_NOINIT)
+    {
+        return RES_NOTRDY;
+    }
+
+    switch (cmd)
+    {
+        case CTRL_SYNC:
+            SD_CS_Low();
+
+            if (SPI_RxByte() == 0xFF)
+            {
+                SD_CS_High();
+                return RES_OK;
+            }
+
+            SD_CS_High();
+            return RES_ERROR;
+
+        case GET_SECTOR_SIZE:
+            *(WORD *)buff = 512;
+            return RES_OK;
+
+        case GET_BLOCK_SIZE:
+            *(DWORD *)buff = 1;
+            return RES_OK;
+
+        case GET_SECTOR_COUNT:
+            *(DWORD *)buff = 8000000;   // temporary value for mount test
+            return RES_OK;
+
+        default:
+            return RES_PARERR;
+    }
 }

@@ -13,6 +13,8 @@ static UINT bytes_written;
 
 #define SD_LOG_FILE_NAME "edas.csv"
 
+SD_LogEntry_t entry;
+bool log_data = false;
 
 static void sd_format_date_time(const Date_t *date, char *buffer, size_t size)
 {
@@ -165,5 +167,43 @@ uint8_t SD_Logger_PrintFileUART(void)
                   strlen("--- End of SD Card Log File ---\r\n"));
 
     f_close(&file);
+    return 1;
+}
+
+uint8_t SD_Logger_ClearFile(void)
+{
+    FRESULT result;
+    FIL file;
+    UINT bytes_written;
+
+    const char *header =
+        "DateTime,Light_lux,Temperature_C,Distance_cm,"
+        "Accel_X_g,Accel_Y_g,Accel_Z_g,"
+        "UnsafeDriving,ImpactWarning,LowLightWarning,"
+        "ProximityWarning,HighTemperature,"
+        "Latitude,Longitude\r\n";
+
+    /*
+     * FA_CREATE_ALWAYS clears the file if it already exists.
+     * If the file does not exist, it creates it.
+     */
+    result = f_open(&file, SD_LOG_FILE_NAME, FA_CREATE_ALWAYS | FA_WRITE);
+
+    if (result != FR_OK)
+    {
+        return 0;
+    }
+
+    result = f_write(&file, header, strlen(header), &bytes_written);
+
+    if (result != FR_OK || bytes_written != strlen(header))
+    {
+        f_close(&file);
+        return 0;
+    }
+
+    f_sync(&file);
+    f_close(&file);
+
     return 1;
 }

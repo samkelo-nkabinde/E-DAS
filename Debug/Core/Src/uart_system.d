@@ -39,7 +39,12 @@ Core/Src/uart_system.o: ../Core/Src/uart_system.c \
  ../Core/Inc/command.h ../Core/Inc/date.h ../Core/Inc/stats.h \
  ../Core/Inc/temperature.h ../Core/Inc/kalman_filter.h \
  ../Core/Inc/distance.h ../Core/Inc/light.h ../Core/Inc/mp6050.h \
- ../Core/Inc/fuel.h
+ ../Core/Inc/fuel.h ../Core/Inc/sd_logger.h ../FATFS/App/fatfs.h \
+ ../Middlewares/Third_Party/FatFs/src/ff.h \
+ ../Middlewares/Third_Party/FatFs/src/integer.h ../FATFS/Target/ffconf.h \
+ ../Core/Inc/main.h ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
+ ../Middlewares/Third_Party/FatFs/src/diskio.h \
+ ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/user_diskio.h
 ../Core/Inc/uart_system.h:
 ../Core/Inc/uart_handle.h:
 ../Core/Inc/main.h:
@@ -88,3 +93,13 @@ Core/Src/uart_system.o: ../Core/Src/uart_system.c \
 ../Core/Inc/light.h:
 ../Core/Inc/mp6050.h:
 ../Core/Inc/fuel.h:
+../Core/Inc/sd_logger.h:
+../FATFS/App/fatfs.h:
+../Middlewares/Third_Party/FatFs/src/ff.h:
+../Middlewares/Third_Party/FatFs/src/integer.h:
+../FATFS/Target/ffconf.h:
+../Core/Inc/main.h:
+../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h:
+../Middlewares/Third_Party/FatFs/src/diskio.h:
+../Middlewares/Third_Party/FatFs/src/ff.h:
+../FATFS/Target/user_diskio.h:

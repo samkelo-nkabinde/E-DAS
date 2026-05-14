@@ -36,90 +36,13 @@
 #include "state_machine.h"
 #include "mp6050.h"
 #include "sd_logger.h"
+#include "fatfs_sd.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-FATFS fs;
-FIL fil;
 
-void UART_Print(const char *msg) {
-    UART_transmit(&g_uart2, (const uint8_t *)msg, strlen(msg));
-}
-void Test_SD_Card(void) {
-    FRESULT fres;     // FatFs return code
-    char uart_buf[100]; // Buffer for UART messages
-    char read_buf[50];  // Buffer for reading file data
-    UINT bytesWrote;
-    UINT bytesRead;
 
-    UART_Print("\r\n--- Starting SD Card Test ---\r\n");
-
-    // 1. Mount the SD Card
-    // The '1' parameter mounts the file system immediately to check for errors
-    fres = f_mount(&fs, "", 1);
-    if (fres != FR_OK) {
-        sprintf(uart_buf, "ERROR: f_mount failed with code (%i)\r\n", fres);
-        UART_Print(uart_buf);
-        return; // Halt the test if mounting fails
-    }
-    UART_Print("SUCCESS: SD Card Mounted!\r\n");
-
-    // 2. Create and Open a File for Writing
-    fres = f_open(&fil, "test.txt", FA_WRITE | FA_OPEN_ALWAYS | FA_CREATE_ALWAYS);
-    if (fres == FR_OK) {
-        UART_Print("SUCCESS: 'test.txt' opened for writing.\r\n");
-
-        // 3. Write data to the file
-        const char *write_data = "Hello from STM32 FatFs!";
-        fres = f_write(&fil, write_data, strlen(write_data), &bytesWrote);
-
-        if (fres == FR_OK) {
-            sprintf(uart_buf, "SUCCESS: Wrote %i bytes.\r\n", bytesWrote);
-            UART_Print(uart_buf);
-        } else {
-            sprintf(uart_buf, "ERROR: f_write failed with code (%i)\r\n", fres);
-            UART_Print(uart_buf);
-        }
-
-        // 4. Close the file to flush data to the SD card
-        f_close(&fil);
-    } else {
-        sprintf(uart_buf, "ERROR: f_open (write) failed with code (%i)\r\n", fres);
-        UART_Print(uart_buf);
-    }
-
-    // 5. Open the File for Reading
-    fres = f_open(&fil, "test.txt", FA_READ);
-    if (fres == FR_OK) {
-        UART_Print("SUCCESS: 'test.txt' opened for reading.\r\n");
-
-        // 6. Read the data back
-        fres = f_read(&fil, read_buf, sizeof(read_buf) - 1, &bytesRead);
-        if (fres == FR_OK) {
-            read_buf[bytesRead] = '\0'; // Null-terminate the string safely
-            sprintf(uart_buf, "SUCCESS: Read %i bytes -> \"%s\"\r\n", bytesRead, read_buf);
-            UART_Print(uart_buf);
-        } else {
-            sprintf(uart_buf, "ERROR: f_read failed with code (%i)\r\n", fres);
-            UART_Print(uart_buf);
-        }
-
-        // 7. Close the file
-        f_close(&fil);
-    } else {
-        sprintf(uart_buf, "ERROR: f_open (read) failed with code (%i)\r\n", fres);
-        UART_Print(uart_buf);
-    }
-
-    // 8. Unmount the SD Card
-    fres = f_mount(NULL, "", 0);
-    if (fres == FR_OK) {
-        UART_Print("SUCCESS: SD Card Unmounted.\r\n");
-    }
-
-    UART_Print("--- SD Card Test Complete ---\r\n\r\n");
-}
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -161,6 +84,10 @@ static void MX_ADC1_Init(void);
 static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 /* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
 /* USER CODE END 0 */
 
 /**
@@ -192,6 +119,10 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+  HAL_Delay(10);
+
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
@@ -211,73 +142,68 @@ int main(void)
   light_init();
 
   const char *student_number = "*28118944#\n";
-  while (HAL_GetTick() - start < 250);
+  uint32_t end = HAL_GetTick();
+
+  char time[30];
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
+  sprintf(time, "time: %ul\n", end - start);
+  UART_transmit(&g_uart2, (uint8_t *)time, strlen(time));
+
   OLED_init();
   MPU6050_Init();
+  SD_Logger_Init();
 
-  if (SD_Logger_Init())
+
+  if (SD_Logger_ClearFile())
   {
-      UART_transmit(&g_uart2, (uint8_t *)"SD logger ready\r\n", 17);
+      UART_transmit(&g_uart2, (uint8_t *)"SD log cleared\r\n", 16);
   }
   else
   {
-      UART_transmit(&g_uart2, (uint8_t *)"SD logger init failed\r\n", 23);
+      UART_transmit(&g_uart2, (uint8_t *)"SD clear failed\r\n", 17);
   }
 
-  static uint8_t printed_sd_file = 0;
+  SD_LogEntry_t entry;
 
-  if (HAL_GetTick() > 5000 && printed_sd_file == 0)
+  date_update(&system_date);
+  entry.date = system_date;
+
+  entry.light_lux = 451;
+  entry.temperature_c = 28.5f;
+  entry.distance_cm = 15.2f;
+
+  entry.accel_x_g = -0.11f;
+  entry.accel_y_g = 0.35f;
+  entry.accel_z_g = 0.57f;
+
+  entry.unsafe_driving = 1;
+  entry.impact_warning = 0;
+  entry.low_light_warning = 0;
+  entry.proximity_warning = 0;
+  entry.high_temperature_warning = 0;
+
+  entry.latitude = -34.832500f;
+  entry.longitude = 20.023056f;
+
+  if (SD_Logger_WriteEntry(&entry))
   {
-      printed_sd_file = 1;
-      SD_Logger_PrintFileUART();
+      UART_transmit(&g_uart2, (uint8_t *)"SD test log written\r\n", 21);
   }
+  else
+  {
+      UART_transmit(&g_uart2, (uint8_t *)"SD test log failed\r\n", 20);
+  }
+
+  SD_Logger_PrintFileUART();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      static uint32_t last_sd_log_time = 0;
-      static uint8_t printed_sd_file = 0;
+    /* USER CODE END WHILE */
 
-      if (HAL_GetTick() - last_sd_log_time >= 1000)
-      {
-          last_sd_log_time = HAL_GetTick();
-
-          SD_LogEntry_t entry;
-
-          date_update(&system_date);
-          entry.date = system_date;
-
-          entry.light_lux = light.lux;
-          entry.temperature_c = temperature.filtered;
-          entry.distance_cm = distance.filtered;
-
-          entry.accel_x_g = acceleration.x_g;
-          entry.accel_y_g = acceleration.y_g;
-          entry.accel_z_g = acceleration.z_g;
-
-          entry.unsafe_driving = 0;
-          entry.impact_warning = 0;
-          entry.low_light_warning = 0;
-          entry.proximity_warning = 0;
-          entry.high_temperature_warning = 0;
-
-          entry.latitude = 0.000000f;
-          entry.longitude = 0.000000f;
-
-          if (!SD_Logger_WriteEntry(&entry))
-          {
-              UART_transmit(&g_uart2, (uint8_t *)"SD write failed\r\n", 17);
-          }
-      }
-
-      if (HAL_GetTick() > 5000 && printed_sd_file == 0)
-      {
-          printed_sd_file = 1;
-          SD_Logger_PrintFileUART();
-      }
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -493,7 +419,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -627,13 +553,16 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, LED_D5_Pin|LED_D4_Pin|LED_D3_Pin|GPIO_PIN_7
-                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15, GPIO_PIN_RESET);
+                          |GPIO_PIN_11|GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1|GPIO_PIN_2, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_D2_GPIO_Port, LED_D2_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
 
   /*Configure GPIO pins : PC0 PC1 PC2 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2;
@@ -696,7 +625,7 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
   /* USER CODE END MX_GPIO_Init_2 */
 }
 

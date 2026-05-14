@@ -6,6 +6,7 @@
  */
 
 #include "uart_system.h"
+#include "sd_logger.h"
 
 void uart_system_update(void)
 {
@@ -34,9 +35,11 @@ void uart_system_update(void)
 			break;
 
 		case LOG_COMMAND:
+			log_data = !log_data;
 			break;
 
 		case DUMP_COMMAND:
+			SD_Logger_PrintFileUART();
 			break;
 
 		case SFD_COMMAND:
@@ -57,6 +60,7 @@ void uart_system_update(void)
 			break;
 
 		case CLF_COMMAND:
+			SD_Logger_ClearFile();
 			break;
 
 		case SETRST_COMMAND:

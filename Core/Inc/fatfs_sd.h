@@ -10,18 +10,21 @@
 
 #include "main.h"
 #include "diskio.h"
+#include <stdio.h>
+#include <string.h>
 
-// Define the SPI Handle and CS Pin based on your main.c
+#include "uart_handle.h"
+
 extern SPI_HandleTypeDef hspi1;
-#define HSPI_SD &hspi1
-#define SD_CS_PORT GPIOA
-#define SD_CS_PIN GPIO_PIN_15
 
-// Function Prototypes for user_diskio.c to call
-DSTATUS SD_disk_initialize (BYTE pdrv);
-DSTATUS SD_disk_status (BYTE pdrv);
-DRESULT SD_disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
-DRESULT SD_disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
-DRESULT SD_disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+#define HSPI_SD     &hspi1
+#define SD_CS_PORT  GPIOA
+#define SD_CS_PIN   GPIO_PIN_15
+
+DSTATUS SD_disk_initialize(BYTE pdrv);
+DSTATUS SD_disk_status(BYTE pdrv);
+DRESULT SD_disk_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count);
+DRESULT SD_disk_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count);
+DRESULT SD_disk_ioctl(BYTE pdrv, BYTE cmd, void *buff);
 
 #endif /* INC_FATFS_SD_H_ */
