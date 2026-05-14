@@ -32,6 +32,7 @@ uint8_t keypad_map[ROW_NUM][COL_NUM] = {
 };
 
 
+
 void keypad_init(void)
 {
 	keypad_reset();
@@ -103,17 +104,22 @@ void keypad_number_update(keypad_num_t *k)
     {
         if (!k->active)
         {
-            k->current = 0;
+            k->current_raw = 0;
+            k->current = 0.0f;
             k->active = 1;
         }
 
-        k->current = (k->current * 10) + (key - '0');
+        k->current_raw = (k->current_raw * 10U) + (key - '0');
+
+        k->current = (float)k->current_raw / 10.0f;
     }
 }
 
 void keypad_number_commit(keypad_num_t *k)
 {
     k->last = k->current;
-    k->current = 0;
+
+    k->current_raw = 0;
+    k->current = 0.0f;
     k->active = 0;
 }

@@ -21,6 +21,7 @@
 #include "distance.h"
 #include "date.h"
 #include "led.h"
+#include "sd_logger.h"
 
 typedef enum {
     STATE_TOP_MENU,

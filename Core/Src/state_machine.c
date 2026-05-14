@@ -26,8 +26,8 @@ int impact_detected = 0;
 static uint8_t locked = 0;
 static ButtonType last_button = NO_BUTTON;
 
-static keypad_num_t kp_2_1 = {0, 0, 0};
-static keypad_num_t kp_2_2 = {0, 0, 0};
+static keypad_num_t kp_2_1 = {0, 0, 0, 0};
+static keypad_num_t kp_2_2 = {0, 0, 0, 0};
 
 void state_machine(void)
 {
@@ -37,6 +37,10 @@ void state_machine(void)
 	update_temperature();
 	compute_fuel_efficiency();
 	MPU6050_ReadAccel(&acceleration);
+
+	if(log_data)
+		SD_Logger_PrintFileUART();
+
 	static uint8_t light_counter = 0;
 	light_counter++;
 	if (light_counter >= 6)
@@ -166,7 +170,17 @@ void state_machine(void)
             {
             	case PAGE_2_1: display_2_1(locked, kp_2_1.current); break;
             	case PAGE_2_2: display_2_2(locked, kp_2_2.current); break;
-                case PAGE_2_3: display_2_3(0); break;
+                case PAGE_2_3:
+                	uint8_t key = keypad_get_key();
+
+                	if(key == '*')
+                		log_data = true;
+                	else if(key == '#')
+                		log_data = false;
+
+                	display_2_3(log_data);
+
+                	break;
             }
             if (button != NO_BUTTON)
             {

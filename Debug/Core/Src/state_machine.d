@@ -41,7 +41,13 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
  ../Core/Inc/menu.h ../Core/Inc/temperature.h ../Core/Inc/kalman_filter.h \
  ../Core/Inc/distance.h ../Core/Inc/light.h ../Core/Inc/fuel.h \
  ../Core/Inc/date.h ../Core/Inc/mp6050.h ../Core/Inc/keypad.h \
- ../Core/Inc/led.h ../Core/Inc/mp6050.h
+ ../Core/Inc/led.h ../Core/Inc/sd_logger.h ../FATFS/App/fatfs.h \
+ ../Middlewares/Third_Party/FatFs/src/ff.h \
+ ../Middlewares/Third_Party/FatFs/src/integer.h ../FATFS/Target/ffconf.h \
+ ../Core/Inc/main.h ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
+ ../Middlewares/Third_Party/FatFs/src/diskio.h \
+ ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/user_diskio.h \
+ ../Core/Inc/uart_handle.h ../Core/Inc/mp6050.h
 ../Core/Inc/state_machine.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -95,4 +101,15 @@ Core/Src/state_machine.o: ../Core/Src/state_machine.c \
 ../Core/Inc/mp6050.h:
 ../Core/Inc/keypad.h:
 ../Core/Inc/led.h:
+../Core/Inc/sd_logger.h:
+../FATFS/App/fatfs.h:
+../Middlewares/Third_Party/FatFs/src/ff.h:
+../Middlewares/Third_Party/FatFs/src/integer.h:
+../FATFS/Target/ffconf.h:
+../Core/Inc/main.h:
+../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h:
+../Middlewares/Third_Party/FatFs/src/diskio.h:
+../Middlewares/Third_Party/FatFs/src/ff.h:
+../FATFS/Target/user_diskio.h:
+../Core/Inc/uart_handle.h:
 ../Core/Inc/mp6050.h:

@@ -34,8 +34,9 @@ void keypad_clear(void);
 
 typedef struct
 {
-    uint32_t current;
-    uint32_t last;
+    uint16_t current_raw;
+    float current;
+    float last;
     uint8_t active;
 } keypad_num_t;
 
