@@ -112,6 +112,16 @@ void state_machine(void)
 	    }
 	}
 
+	if (unsafe_driving_external_warning)
+	{
+	    unsafe_driving = true;
+	}
+
+	if (impact_detected_external_warning)
+	{
+	    impact_detected = true;
+	}
+
 	if (current_state != STATE_WARNING)
 	{
 	    if (unsafe_driving || impact_detected ||
@@ -325,8 +335,12 @@ void state_machine(void)
                 light_external_warning = 0;
                 temperature_external_warning = 0;
 
-                unsafe_driving = 0;
-                impact_detected = 0;
+                unsafe_driving_external_warning = false;
+                impact_detected_external_warning = false;
+
+                unsafe_driving = false;
+                impact_detected = false;
+
                 light.warning = 0;
                 distance.warning = 0;
                 temperature.warning = 0;
