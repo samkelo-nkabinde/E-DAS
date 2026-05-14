@@ -88,10 +88,10 @@ void update_warning(uint32_t c, uint32_t y)
 	switch(c)
 	{
 		case 1:
-
+			unsafe_driving_external_warning = y;
 			break;
 		case 2:
-
+			impact_detected_external_warning = y;
 			break;
 		case 3:
 			light_external_warning = y;

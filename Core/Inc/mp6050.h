@@ -47,6 +47,10 @@ typedef struct
 
 } MPU6050_Calibration;
 
+extern bool unsafe_driving;
+extern bool impact_detected;
+extern bool unsafe_driving_external_warning;
+extern bool impact_detected_external_warning;
 
 extern MPU6050_AccelData acceleration;
 extern bool MPU6050_ready;

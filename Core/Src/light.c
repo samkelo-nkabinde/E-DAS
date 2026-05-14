@@ -27,33 +27,21 @@ void light_init()
 
 void light_update()
 {
-    // 1. Wake up the ADC and ask it for exactly ONE reading
     HAL_ADC_Start(&hadc1);
 
-    // 2. Wait up to 10ms for that single reading to finish
     if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)
     {
         light.raw = (uint16_t)HAL_ADC_GetValue(&hadc1);
 
-        // Filter the raw integer signal directly (cast to float for Kalman)
-        float raw_filtered = kalman_update(&kf_light, (float)light.raw);
+        light.lux = (0.1497f * light.raw) + 300;// 245.9f;
 
-        // Calculate voltage if you still need it for telemetry/other logic
-        light.voltage = (VREF * raw_filtered) / ADC_MAX;
-
-        // --- NEW CALIBRATED MATH ---
-        // Maps Raw 216 -> 300 Lux | Raw 822 -> 400 Lux
-        light.lux = (CALIBRATION_CONSTANT * raw_filtered) + 320.0f; // 264.36f;
-
-        // Prevent negative Lux values in very dark rooms
         if (light.lux < 0.0f)
         {
             light.lux = 0.0f;
         }
     }
 
-    // 3. Cleanly shut down the ADC
     HAL_ADC_Stop(&hadc1);
 
-    light.warning = light_external_warning || (light.lux < 300); // Note: lux < 0 will always be false here due to the check above
+    light.warning = (light.lux < 300.0f);
 }

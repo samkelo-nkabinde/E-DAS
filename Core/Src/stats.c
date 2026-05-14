@@ -86,10 +86,10 @@ void stats_transmit_one(Stat_type_e stat)
             stat_line(line, "High Temperature:", "%d", (int)temperature.warning);
             break;
         case STAT_GPS_LAT:
-            stat_line(line, "GPSLat:", "%+09.6f", 0);
+            stat_line(line, "GPSLat:", "%+010.6f", 0.0f);
             break;
         case STAT_GPS_LONG:
-            stat_line(line, "GPSLong:", "%+010.6f", 0);
+            stat_line(line, "GPSLong:", "%+010.6f", 0.0f);
             break;
         default:
             return;

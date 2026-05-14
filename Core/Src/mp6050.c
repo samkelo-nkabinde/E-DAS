@@ -39,6 +39,10 @@ static uint16_t mpu6050_addr = MPU6050_ADDR_LOW;
 MPU6050_AccelData acceleration;
 
 bool MPU6050_ready = false;
+bool unsafe_driving = false;
+bool impact_detected = false;
+bool unsafe_driving_external_warning = false;
+bool impact_detected_external_warning = false;
 
 static MPU6050_Calibration accel_cal =
 {

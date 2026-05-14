@@ -20,8 +20,7 @@ static measurements_page_e prev_m_page;
 static entry_page_e prev_e_page;
 static diagnostics_page_e prev_d_page;
 
-int unsafe_driving = 0;
-int impact_detected = 0;
+
 
 static uint8_t locked = 0;
 static ButtonType last_button = NO_BUTTON;
@@ -29,6 +28,17 @@ static ButtonType last_button = NO_BUTTON;
 static keypad_num_t kp_2_1 = {0, 0, 0, 0};
 static keypad_num_t kp_2_2 = {0, 0, 0, 0};
 static uint32_t last_sd_log_time = 0;
+
+#define LOW_LIGHT_COOLDOWN_MS   (60UL * 60UL * 1000UL)
+#define HIGH_TEMP_COOLDOWN_MS   (30UL * 60UL * 1000UL)
+
+static uint32_t low_light_next_allowed = 0;
+static uint32_t high_temp_next_allowed = 0;
+
+static uint8_t time_reached(uint32_t now, uint32_t target)
+{
+    return ((int32_t)(now - target) >= 0);
+}
 
 void state_machine(void)
 {
@@ -38,6 +48,21 @@ void state_machine(void)
 	update_temperature();
 	compute_fuel_efficiency();
 	MPU6050_ReadAccel(&acceleration);
+	uint32_t now = HAL_GetTick();
+
+	/* Low light cooldown */
+	if (low_light_next_allowed != 0 && !time_reached(now, low_light_next_allowed))
+	{
+	    light.warning = 0;
+	    LED_off(&D4);
+	}
+
+	/* High temperature cooldown */
+	if (high_temp_next_allowed != 0 && !time_reached(now, high_temp_next_allowed))
+	{
+	    temperature.warning = 0;
+	    LED_off(&D5);
+	}
 
 	if(log_data && (HAL_GetTick() - last_sd_log_time >= 1000))
 	{
@@ -71,32 +96,26 @@ void state_machine(void)
 		light_update();
 		light_counter = 0;
 	}
-
-	if (current_state == STATE_WARNING)
+	if (light_external_warning)
 	{
-	    if (distance.filtered > 30)
+	    if (low_light_next_allowed == 0 || time_reached(now, low_light_next_allowed))
 	    {
-	        distance.warning = 0;
+	        light.warning = 1;
+	    }
+	}
 
-	        if (!unsafe_driving && !impact_detected && !light.warning && !temperature.warning)
-	        {
-	        	distance_external_warning = 0;
-
-	            current_state = prev_state;
-	            current_top_menu = prev_top_menu;
-	            m_page = prev_m_page;
-	            e_page = prev_e_page;
-	            d_page = prev_d_page;
-
-	            last_button = NO_BUTTON;
-	            LED_off(&D2);
-	        }
+	if (temperature_external_warning)
+	{
+	    if (high_temp_next_allowed == 0 || time_reached(now, high_temp_next_allowed))
+	    {
+	        temperature.warning = 1;
 	    }
 	}
 
 	if (current_state != STATE_WARNING)
 	{
-	    if (unsafe_driving || impact_detected || light.warning || distance.warning || temperature.warning)
+	    if (unsafe_driving || impact_detected ||
+	        light.warning || distance.warning || temperature.warning)
 	    {
 	        prev_state = current_state;
 	        prev_top_menu = current_top_menu;
@@ -105,6 +124,36 @@ void state_machine(void)
 	        prev_d_page = d_page;
 
 	        current_state = STATE_WARNING;
+	    }
+	}
+
+	if (current_state == STATE_WARNING)
+	{
+		if (distance.warning && !distance_external_warning && distance.filtered > 30)
+	    {
+	        distance.warning = 0;
+	        distance_external_warning = 0;
+	        LED_off(&D2);
+	    }
+
+	    if (temperature.warning && !temperature_external_warning && temperature.filtered < 30.0f)
+	    {
+	        temperature.warning = 0;
+	        temperature_external_warning = 0;
+	        high_temp_next_allowed = HAL_GetTick() + HIGH_TEMP_COOLDOWN_MS;
+	        LED_off(&D5);
+	    }
+
+	    if (!unsafe_driving && !impact_detected && !light.warning &&
+	        !distance.warning && !temperature.warning)
+	    {
+	        current_state = prev_state;
+	        current_top_menu = prev_top_menu;
+	        m_page = prev_m_page;
+	        e_page = prev_e_page;
+	        d_page = prev_d_page;
+
+	        last_button = NO_BUTTON;
 	    }
 	}
 
@@ -264,9 +313,17 @@ void state_machine(void)
 
             if (button == BUTTON_CENTER && last_button != BUTTON_CENTER)
             {
-            	distance_external_warning = 0;
-            	light_external_warning = 0;
-            	temperature_external_warning = 0;
+                uint32_t now = HAL_GetTick();
+
+                if (light.warning)
+                    low_light_next_allowed = now + LOW_LIGHT_COOLDOWN_MS;
+
+                if (temperature.warning)
+                    high_temp_next_allowed = now + HIGH_TEMP_COOLDOWN_MS;
+
+                distance_external_warning = 0;
+                light_external_warning = 0;
+                temperature_external_warning = 0;
 
                 unsafe_driving = 0;
                 impact_detected = 0;
@@ -281,11 +338,12 @@ void state_machine(void)
                 e_page = prev_e_page;
                 d_page = prev_d_page;
 
-                LED_off(&D5);
+                LED_off(&D2);
                 LED_off(&D4);
+                LED_off(&D5);
+
                 button = NO_BUTTON;
             }
-
 
             break;
     }
