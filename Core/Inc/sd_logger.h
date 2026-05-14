@@ -40,6 +40,7 @@ typedef struct
 
 extern SD_LogEntry_t entry;
 extern bool log_data;
+extern bool sd_card_ready;
 
 uint8_t SD_Logger_PrintFileUART(void);
 uint8_t SD_Logger_Init(void);

@@ -20,6 +20,7 @@
 #include "fuel.h"
 #include "date.h"
 #include "mp6050.h"
+#include "sd_logger.h"
 
 void display_default_page(void);
 void display_entry_page(void);

@@ -25,7 +25,7 @@
 #include <string.h>
 #include "ff_gen_drv.h"
 #include <stdio.h>
-#include "uart_system.h"
+
 // ADD THIS: Include the SD driver header
 #include "fatfs_sd.h"
 
@@ -71,13 +71,8 @@ DSTATUS USER_initialize (
 {
   /* USER CODE BEGIN INIT */
     DSTATUS result;
-    char msg[80];
-
     result = SD_disk_initialize(pdrv);
     Stat = result;
-
-    snprintf(msg, sizeof(msg), "USER_initialize pdrv=%u result=0x%02X\r\n", pdrv, result);
-    UART_transmit(&g_uart2, (uint8_t *)msg, strlen(msg));
 
     return Stat;
   /* USER CODE END INIT */

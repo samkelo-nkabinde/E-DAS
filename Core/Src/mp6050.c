@@ -38,6 +38,7 @@ static uint16_t mpu6050_addr = MPU6050_ADDR_LOW;
 
 MPU6050_AccelData acceleration;
 
+bool MPU6050_ready = false;
 
 static MPU6050_Calibration accel_cal =
 {

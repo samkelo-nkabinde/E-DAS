@@ -150,51 +150,10 @@ int main(void)
   UART_transmit(&g_uart2, (uint8_t *)time, strlen(time));
 
   OLED_init();
-  MPU6050_Init();
-  SD_Logger_Init();
+  MPU6050_ready = MPU6050_Init();
+  sd_card_ready = SD_Logger_Init();
 
-
-  if (SD_Logger_ClearFile())
-  {
-      UART_transmit(&g_uart2, (uint8_t *)"SD log cleared\r\n", 16);
-  }
-  else
-  {
-      UART_transmit(&g_uart2, (uint8_t *)"SD clear failed\r\n", 17);
-  }
-
-  SD_LogEntry_t entry;
-
-  date_update(&system_date);
-  entry.date = system_date;
-
-  entry.light_lux = 451;
-  entry.temperature_c = 28.5f;
-  entry.distance_cm = 15.2f;
-
-  entry.accel_x_g = -0.11f;
-  entry.accel_y_g = 0.35f;
-  entry.accel_z_g = 0.57f;
-
-  entry.unsafe_driving = 1;
-  entry.impact_warning = 0;
-  entry.low_light_warning = 0;
-  entry.proximity_warning = 0;
-  entry.high_temperature_warning = 0;
-
-  entry.latitude = -34.832500f;
-  entry.longitude = 20.023056f;
-
-  if (SD_Logger_WriteEntry(&entry))
-  {
-      UART_transmit(&g_uart2, (uint8_t *)"SD test log written\r\n", 21);
-  }
-  else
-  {
-      UART_transmit(&g_uart2, (uint8_t *)"SD test log failed\r\n", 20);
-  }
-
-  SD_Logger_PrintFileUART();
+  SD_Logger_ClearFile();
   /* USER CODE END 2 */
 
   /* Infinite loop */

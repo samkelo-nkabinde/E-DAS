@@ -28,6 +28,7 @@ static ButtonType last_button = NO_BUTTON;
 
 static keypad_num_t kp_2_1 = {0, 0, 0, 0};
 static keypad_num_t kp_2_2 = {0, 0, 0, 0};
+static uint32_t last_sd_log_time = 0;
 
 void state_machine(void)
 {
@@ -38,8 +39,30 @@ void state_machine(void)
 	compute_fuel_efficiency();
 	MPU6050_ReadAccel(&acceleration);
 
-	if(log_data)
-		SD_Logger_PrintFileUART();
+	if(log_data && (HAL_GetTick() - last_sd_log_time >= 1000))
+	{
+		  entry.date = system_date;
+
+		  entry.light_lux = light.lux;
+		  entry.temperature_c = temperature.filtered;
+		  entry.distance_cm = distance.filtered;
+
+		  entry.accel_x_g = -0.11f;
+		  entry.accel_y_g = 0.35f;
+		  entry.accel_z_g = 0.57f;
+
+		  entry.unsafe_driving = 0;
+		  entry.impact_warning = 0;
+		  entry.low_light_warning = light.warning;
+		  entry.proximity_warning = distance.warning;
+		  entry.high_temperature_warning = temperature.warning;
+
+		  entry.latitude = 00.00000f;
+		  entry.longitude = 00.00000f;
+
+		  SD_Logger_WriteEntry(&entry);
+		  last_sd_log_time = HAL_GetTick();
+	}
 
 	static uint8_t light_counter = 0;
 	light_counter++;
@@ -201,10 +224,10 @@ void state_machine(void)
         case STATE_DIAGNOSTICS:
             switch (d_page)
             {
-                case PAGE_3_1: display_3_1(1); break;
-                case PAGE_3_2: display_3_2(1); break;
-                case PAGE_3_3: display_3_3(1); break;
-                case PAGE_3_4: display_3_4(1); break;
+                case PAGE_3_1: display_3_1(sd_card_ready); break;
+                case PAGE_3_2: display_3_2(MPU6050_ready); break;
+                case PAGE_3_3: display_3_3(0); break;
+                case PAGE_3_4: display_3_4(log_data); break;
             }
             if (button != NO_BUTTON)
             {

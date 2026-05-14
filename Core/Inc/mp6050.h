@@ -9,16 +9,15 @@
 #define INC_MP6050_H_
 
 #include <stdint.h>
+#include <math.h>
+#include <stdbool.h>
 #include "main.h"
-
-#define MPU6050_OK     0
-#define MPU6050_ERROR  1
 
 extern I2C_HandleTypeDef hi2c1;
 
 
-#define MPU6050_OK     0
-#define MPU6050_ERROR  1
+#define MPU6050_OK     1
+#define MPU6050_ERROR  0
 
 typedef struct
 {
@@ -50,6 +49,7 @@ typedef struct
 
 
 extern MPU6050_AccelData acceleration;
+extern bool MPU6050_ready;
 /*
  * Initializes the MPU-6050.
  * Returns MPU6050_OK if successful.

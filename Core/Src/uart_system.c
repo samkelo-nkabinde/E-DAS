@@ -39,7 +39,9 @@ void uart_system_update(void)
 			break;
 
 		case DUMP_COMMAND:
+			UART_transmit(&g_uart2, (uint8_t *)"@", 1);
 			SD_Logger_PrintFileUART();
+			UART_transmit(&g_uart2, (uint8_t *)"&\n", 2);
 			break;
 
 		case SFD_COMMAND:
