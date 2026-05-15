@@ -20,12 +20,7 @@ void uart_system_update(void)
 	switch(type)
 	{
 		case STAT_COMMAND:
-			uint32_t start = HAL_GetTick();
 			stats_transmit_all();
-		    uint32_t end = HAL_GetTick();
-		    char time[30];
-		    sprintf(time, "Time: %lu\n", (unsigned long)(end - start));
-		    UART_transmit(&g_uart2, (uint8_t *)time, strlen(time));
 			break;
 
 		case SETWARN_COMMAND:

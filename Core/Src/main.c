@@ -148,8 +148,8 @@ int main(void)
   MX_ADC1_Init();
   MX_FATFS_Init();
   MX_SPI1_Init();
-  /* USER CODE BEGIN 2 */
   UART_init(&g_uart2, &huart2);
+  /* USER CODE BEGIN 2 */
   keypad_init();
   button_init();
   LED_init();
@@ -157,14 +157,10 @@ int main(void)
   date_init();
   distance_init();
   light_init();
-
   const char *student_number = "*28118944#\n";
-  uint32_t end = HAL_GetTick();
-
-  char time[30];
+  while (HAL_GetTick() - start < 150);
   UART_transmit(&g_uart2, (uint8_t *)student_number, strlen(student_number));
-  sprintf(time, "time: %ul\n", end - start);
-  UART_transmit(&g_uart2, (uint8_t *)time, strlen(time));
+
 
   OLED_init();
   MPU6050_ready = MPU6050_Init();
@@ -181,17 +177,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  	//state_machine();
-	  	//uart_system_update();
-
-
-	      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
-	      HAL_Delay(2000);
-
-	      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);
-	      HAL_Delay(2000);
-
-
+	  	state_machine();
+	  	uart_system_update();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
