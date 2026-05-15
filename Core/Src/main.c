@@ -87,7 +87,28 @@ static void MX_SPI1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void ultrasonic_test(void)
+{
+    char msg[100];
+    uint32_t pulse_width;
 
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+    HAL_Delay(100);
+
+    GPIO_PinState echo_state = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
+
+    sprintf(msg, "PA6 idle read: %d\r\n", echo_state);
+    UART_transmit(&g_uart2, (uint8_t *)msg, strlen(msg));
+
+    if (echo_state == GPIO_PIN_SET)
+    {
+        sprintf(msg, "ERROR: Echo is HIGH before trigger\r\n");
+        UART_transmit(&g_uart2, (uint8_t *)msg, strlen(msg));
+        return;
+    }
+
+    /* rest of the function */
+}
 /* USER CODE END 0 */
 
 /**
@@ -119,18 +140,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-  HAL_Delay(10);
-
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_RTC_Init();
   MX_I2C1_Init();
   MX_ADC1_Init();
-  MX_SPI1_Init();
   MX_FATFS_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   UART_init(&g_uart2, &huart2);
   keypad_init();
@@ -164,8 +181,17 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  uart_system_update();
-	  state_machine();
+	  	//state_machine();
+	  	//uart_system_update();
+
+
+	      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+	      HAL_Delay(2000);
+
+	      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);
+	      HAL_Delay(2000);
+
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -259,7 +285,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_13;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -533,10 +559,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED_D5_Pin LED_D4_Pin LED_D3_Pin PA7
-                           PA11 PA12 PA15 */
-  GPIO_InitStruct.Pin = LED_D5_Pin|LED_D4_Pin|LED_D3_Pin|GPIO_PIN_7
-                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
+  /*Configure GPIO pins : LED_D5_Pin LED_D4_Pin LED_D3_Pin PA11
+                           PA12 PA15 */
+  GPIO_InitStruct.Pin = LED_D5_Pin|LED_D4_Pin|LED_D3_Pin|GPIO_PIN_11
+                          |GPIO_PIN_12|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -545,7 +571,14 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PA6 */
   GPIO_InitStruct.Pin = GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB0 PB6 */
