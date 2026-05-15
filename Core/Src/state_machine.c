@@ -64,7 +64,7 @@ void state_machine(void)
 	    LED_off(&D5);
 	}
 
-	if(log_data && (HAL_GetTick() - last_sd_log_time >= 1000) || log_data && impact_detected_new_event)
+	if((log_data && HAL_GetTick() - last_sd_log_time >= 1000) || (log_data && impact_detected_new_event))
 	{
 		  entry.date = system_date;
 
@@ -87,6 +87,7 @@ void state_machine(void)
 
 		  SD_Logger_WriteEntry(&entry);
 		  last_sd_log_time = HAL_GetTick();
+		  impact_detected_new_event = false;
 	}
 
 	static uint8_t light_counter = 0;

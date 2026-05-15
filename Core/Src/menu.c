@@ -87,8 +87,7 @@ void display_1_2(void)
     char date[20];
     char line2[20];
     char line3[20];
-    float total_g = MPU6050_CalculateAccelerationG(&acceleration);
-    format_line(line2, "Accel:", "|%.2f| g", total_g);
+    format_line(line2, "Accel:", "|%.2f| g", acceleration_live_g);
     format_line(line3, "Light:", "%d lux",  (int)light.lux);
     date_format(&system_date, date, sizeof(date), 1);
 
@@ -246,7 +245,7 @@ void display_warn_unsafe_driving(void)
 {
 	OLED_clear();
     char line3[19];
-    format_line(line3, "Accel:", "|%.2f| g", 0.0f);
+    format_line(line3, "Accel:", "|%.2f| g", acceleration_live_g);
     OLED_write("===== WARNING ====", 0, 0);
     OLED_write("--Unsafe Driving--", 0, 11);
     OLED_write(line3, 0, 22);
@@ -257,7 +256,7 @@ void display_warn_impact(void)
 {
 	OLED_clear();
     char line3[19];
-    format_line(line3, "Accel:", "|%.2f| g", 0.0f);
+    format_line(line3, "Accel:", "|%.2f| g", acceleration_live_g);
     OLED_write("===== WARNING ====", 0, 0);
     OLED_write("-Impact Detected--", 0, 11);
     OLED_write(line3, 0, 22);
