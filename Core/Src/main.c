@@ -153,6 +153,9 @@ int main(void)
   MPU6050_ready = MPU6050_Init();
   sd_card_ready = SD_Logger_Init();
 
+  if(MPU6050_ready)
+	  MPU6050_CalibrateGravityOnStartup();
+
   SD_Logger_ClearFile();
   /* USER CODE END 2 */
 

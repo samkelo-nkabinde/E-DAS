@@ -65,15 +65,13 @@ void stats_transmit_one(Stat_type_e stat)
             break;
         case STAT_UNSAFE_DRIVING:
         {
-            float total_g = MPU6050_CalculateAccelerationG(&acceleration);
-            stat_line(line, "Unsafe driving:", "%d", (int)(total_g > 1.5f));
+            stat_line(line, "Unsafe driving:", "%d", (int)unsafe_driving);
             break;
         }
 
         case STAT_IMPACT_DETECTED:
         {
-            float total_g = MPU6050_CalculateAccelerationG(&acceleration);
-            stat_line(line, "Impact detected:", "%d", (int)(total_g > 3.0f));
+            stat_line(line, "Impact detected:", "%d", (int)impact_detected);
             break;
         }
         case STAT_LOW_LIGHT_WARNING:
@@ -89,7 +87,7 @@ void stats_transmit_one(Stat_type_e stat)
             stat_line(line, "GPSLat:", "%+010.6f", 0.0f);
             break;
         case STAT_GPS_LONG:
-            stat_line(line, "GPSLong:", "%+010.6f", 0.0f);
+            stat_line(line, "GPSLong:", "%+011.6f", 0.0f);
             break;
         default:
             return;

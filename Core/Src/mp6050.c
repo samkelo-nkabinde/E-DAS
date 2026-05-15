@@ -35,7 +35,14 @@ static uint16_t mpu6050_addr = MPU6050_ADDR_LOW;
  */
 #define ACCEL_LSB_PER_G   16384.0f
 
+#define UNSAFE_DRIVING_LIMIT_G  0.5f
+#define IMPACT_LIMIT_G          1.5f
+#define GRAVITY_SAMPLE_COUNT    100
 
+static float gravity_x_g = 0.0f;
+static float gravity_y_g = 0.0f;
+static float gravity_z_g = 0.0f;
+static bool gravity_ready = false;
 MPU6050_AccelData acceleration;
 
 bool MPU6050_ready = false;
@@ -43,6 +50,14 @@ bool unsafe_driving = false;
 bool impact_detected = false;
 bool unsafe_driving_external_warning = false;
 bool impact_detected_external_warning = false;
+
+float acceleration_live_g = 0.0f;
+
+float unsafe_driving_trigger_g = 0.0f;
+float impact_trigger_g = 0.0f;
+
+bool unsafe_driving_new_event = false;
+bool impact_detected_new_event = false;
 
 static MPU6050_Calibration accel_cal =
 {
@@ -294,4 +309,114 @@ float MPU6050_CalculateAccelerationMS2(const MPU6050_AccelData *data)
      * 1g is about 9.81 m/s^2.
      */
     return acceleration_g * 9.81f;
+}
+
+
+uint8_t MPU6050_CalibrateGravityOnStartup(void)
+{
+    MPU6050_AccelData sample;
+    float sum_x = 0.0f;
+    float sum_y = 0.0f;
+    float sum_z = 0.0f;
+
+    for (int i = 0; i < GRAVITY_SAMPLE_COUNT; i++)
+    {
+        if (MPU6050_ReadAccel(&sample) != MPU6050_OK)
+        {
+            return MPU6050_ERROR;
+        }
+
+        sum_x += sample.x_g;
+        sum_y += sample.y_g;
+        sum_z += sample.z_g;
+
+        HAL_Delay(10);
+    }
+
+    gravity_x_g = sum_x / GRAVITY_SAMPLE_COUNT;
+    gravity_y_g = sum_y / GRAVITY_SAMPLE_COUNT;
+    gravity_z_g = sum_z / GRAVITY_SAMPLE_COUNT;
+
+    gravity_ready = true;
+
+    return MPU6050_OK;
+}
+
+void acceleration_update(void)
+{
+    float abs_x;
+    float abs_y;
+    float abs_z;
+
+    if (MPU6050_ReadAccel(&acceleration) != MPU6050_OK)
+    {
+        MPU6050_ready = false;
+        return;
+    }
+
+    MPU6050_ready = true;
+
+    if (!gravity_ready)
+    {
+        return;
+    }
+
+    /*
+     * Remove the startup gravity vector.
+     * This works even though the MPU6050 is mounted vertically,
+     * as long as it stays in the same orientation after startup.
+     */
+    acceleration.x_g -= gravity_x_g;
+    acceleration.y_g -= gravity_y_g;
+    acceleration.z_g -= gravity_z_g;
+
+    /*
+     * Live magnitude after gravity removal.
+     * Use this for OLED and UART display.
+     */
+    acceleration_live_g = MPU6050_CalculateAccelerationG(&acceleration);
+
+    abs_x = fabsf(acceleration.x_g);
+    abs_y = fabsf(acceleration.y_g);
+    abs_z = fabsf(acceleration.z_g);
+
+    /*
+     * Impact warning:
+     * Store the trigger magnitude only when the warning first activates.
+     */
+    if ((abs_x > IMPACT_LIMIT_G ||
+         abs_y > IMPACT_LIMIT_G ||
+         abs_z > IMPACT_LIMIT_G) &&
+        !impact_detected)
+    {
+        impact_detected = true;
+        impact_trigger_g = acceleration_live_g;
+        impact_detected_new_event = true;
+    }
+
+    /*
+     * Unsafe driving warning:
+     * Store the trigger magnitude only when the warning first activates.
+     */
+    if ((abs_x > UNSAFE_DRIVING_LIMIT_G ||
+         abs_y > UNSAFE_DRIVING_LIMIT_G ||
+         abs_z > UNSAFE_DRIVING_LIMIT_G) &&
+        !unsafe_driving)
+    {
+        unsafe_driving = true;
+        unsafe_driving_trigger_g = acceleration_live_g;
+        unsafe_driving_new_event = true;
+    }
+}
+
+void acceleration_clear_unsafe_driving(void)
+{
+    unsafe_driving = false;
+    unsafe_driving_new_event = false;
+}
+
+void acceleration_clear_impact_detected(void)
+{
+    impact_detected = false;
+    impact_detected_new_event = false;
 }

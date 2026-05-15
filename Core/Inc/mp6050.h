@@ -52,6 +52,13 @@ extern bool impact_detected;
 extern bool unsafe_driving_external_warning;
 extern bool impact_detected_external_warning;
 
+extern float acceleration_live_g;
+
+extern float unsafe_driving_trigger_g;
+extern float impact_trigger_g;
+
+extern bool unsafe_driving_new_event;
+extern bool impact_detected_new_event;
 extern MPU6050_AccelData acceleration;
 extern bool MPU6050_ready;
 /*
@@ -94,5 +101,6 @@ uint8_t MPU6050_ReadWhoAmI(uint8_t *who);
 
 float MPU6050_CalculateAccelerationG(const MPU6050_AccelData *data);
 float MPU6050_CalculateAccelerationMS2(const MPU6050_AccelData *data);
-
+uint8_t MPU6050_CalibrateGravityOnStartup(void);
+void acceleration_update(void);
 #endif /* INC_MP6050_H_ */

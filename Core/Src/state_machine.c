@@ -47,7 +47,7 @@ void state_machine(void)
 	light_update();
 	update_temperature();
 	compute_fuel_efficiency();
-	MPU6050_ReadAccel(&acceleration);
+	acceleration_update();
 	uint32_t now = HAL_GetTick();
 
 	/* Low light cooldown */
@@ -64,7 +64,7 @@ void state_machine(void)
 	    LED_off(&D5);
 	}
 
-	if(log_data && (HAL_GetTick() - last_sd_log_time >= 1000))
+	if(log_data && (HAL_GetTick() - last_sd_log_time >= 1000) || log_data && impact_detected_new_event)
 	{
 		  entry.date = system_date;
 
@@ -72,18 +72,18 @@ void state_machine(void)
 		  entry.temperature_c = temperature.filtered;
 		  entry.distance_cm = distance.filtered;
 
-		  entry.accel_x_g = -0.11f;
-		  entry.accel_y_g = 0.35f;
-		  entry.accel_z_g = 0.57f;
+		  entry.accel_x_g = acceleration.x_g;
+		  entry.accel_y_g = acceleration.y_g;
+		  entry.accel_z_g = acceleration.z_g;
 
-		  entry.unsafe_driving = 0;
-		  entry.impact_warning = 0;
+		  entry.unsafe_driving = unsafe_driving;
+		  entry.impact_warning = impact_detected;
 		  entry.low_light_warning = light.warning;
 		  entry.proximity_warning = distance.warning;
 		  entry.high_temperature_warning = temperature.warning;
 
-		  entry.latitude = 00.00000f;
-		  entry.longitude = 00.00000f;
+		  entry.latitude = 00.000000f;
+		  entry.longitude = 000.000000f;
 
 		  SD_Logger_WriteEntry(&entry);
 		  last_sd_log_time = HAL_GetTick();
@@ -114,12 +114,22 @@ void state_machine(void)
 
 	if (unsafe_driving_external_warning)
 	{
-	    unsafe_driving = true;
+	    if (!unsafe_driving)
+	    {
+	        unsafe_driving = true;
+	        unsafe_driving_trigger_g = acceleration_live_g;
+	        unsafe_driving_new_event = true;
+	    }
 	}
 
 	if (impact_detected_external_warning)
 	{
-	    impact_detected = true;
+	    if (!impact_detected)
+	    {
+	        impact_detected = true;
+	        impact_trigger_g = acceleration_live_g;
+	        impact_detected_new_event = true;
+	    }
 	}
 
 	if (current_state != STATE_WARNING)
@@ -297,13 +307,16 @@ void state_machine(void)
             break;
 
         case STATE_WARNING:
-            if (unsafe_driving)
+
+            if (impact_detected)
             {
-            	display_warn_unsafe_driving();
-            }
-            else if (impact_detected)
-            {
+            	LED_on(&D3);
             	display_warn_impact();
+            }
+            else if (unsafe_driving)
+            {
+            	LED_blink_control(&D3);
+            	display_warn_unsafe_driving();
             }
             else if (light.warning)
             {
@@ -355,7 +368,7 @@ void state_machine(void)
                 LED_off(&D2);
                 LED_off(&D4);
                 LED_off(&D5);
-
+                LED_off(&D3);
                 button = NO_BUTTON;
             }
 
