@@ -87,28 +87,6 @@ static void MX_SPI1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void ultrasonic_test(void)
-{
-    char msg[100];
-    uint32_t pulse_width;
-
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
-    HAL_Delay(100);
-
-    GPIO_PinState echo_state = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
-
-    sprintf(msg, "PA6 idle read: %d\r\n", echo_state);
-    UART_transmit(&g_uart2, (uint8_t *)msg, strlen(msg));
-
-    if (echo_state == GPIO_PIN_SET)
-    {
-        sprintf(msg, "ERROR: Echo is HIGH before trigger\r\n");
-        UART_transmit(&g_uart2, (uint8_t *)msg, strlen(msg));
-        return;
-    }
-
-    /* rest of the function */
-}
 /* USER CODE END 0 */
 
 /**
